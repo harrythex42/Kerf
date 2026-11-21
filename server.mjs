@@ -10,8 +10,8 @@ import { prepareDocument, contentWarning } from './document.mjs';
 import { boxOverflow } from './page-checks.mjs';
 import { captureTables, inspectTables } from '../../scripts/check-table-fragments.mjs';
 
-const directory = resolve(process.env.KERF_OUTPUT_DIR || join(homedir(), 'Documents', 'Kerf'));
-const server = new McpServer({ name: 'kerf', version: '0.1.2' });
+const directory = resolve(process.env.UNSLICED_OUTPUT_DIR || join(homedir(), 'Documents', 'Unsliced'));
+const server = new McpServer({ name: 'unsliced', version: '0.1.2' });
 
 async function savePdf(filename, buffer) {
   await mkdir(directory, { recursive: true });
@@ -34,8 +34,8 @@ async function savePdf(filename, buffer) {
 }
 
 server.registerTool('create_pdf', {
-  title: '用 Kerf 生成 PDF',
-  description: '当用户需要可搜索、可复制、自动分页的 PDF 时使用。必须把完整原稿传入 markdown 或 html 的其中一个字段，不要缩写、删减或改写，再给出 filename。默认 A4。普通报告用 Markdown。涉及流程图、卡片、复杂版面或内联 SVG 时，请提交包含样式和图形的完整 HTML。图片请用内嵌 data URL。HTML 可用 data-kerf-root 指定排版容器。返回本机文件路径和中文排版体检。请直接调用本工具，避免自行写 jsPDF 或 html2canvas。',
+  title: '用 Unsliced 生成 PDF',
+  description: '当用户需要可搜索、可复制、自动分页的 PDF 时使用。必须把完整原稿传入 markdown 或 html 的其中一个字段，不要缩写、删减或改写，再给出 filename。默认 A4。普通报告用 Markdown。涉及流程图、卡片、复杂版面或内联 SVG 时，请提交包含样式和图形的完整 HTML。图片请用内嵌 data URL。HTML 可用 data-unsliced-root 指定排版容器。返回本机文件路径和中文排版体检。请直接调用本工具，避免自行写 jsPDF 或 html2canvas。',
   inputSchema: {
     markdown: z.string().trim().min(1).max(4_000_000).optional(),
     html: z.string().trim().min(1).max(4_000_000).optional(),
@@ -52,7 +52,7 @@ server.registerTool('create_pdf', {
     const html = prepareDocument(input);
     let steps = 0;
     const progress = message => {
-      console.error('[Kerf]', message);
+      console.error('[Unsliced]', message);
       const progressToken = extra._meta?.progressToken;
       if (progressToken !== undefined) {
         extra.sendNotification({ method: 'notifications/progress', params: { progressToken, progress: ++steps, message } }).catch(() => {});
@@ -65,7 +65,7 @@ server.registerTool('create_pdf', {
     await page.emulateMedia({ media: 'print' });
     await page.setContent(html);
     const selector = await page.evaluate(() => {
-      if (document.querySelectorAll('[data-kerf-root]').length === 1) return '[data-kerf-root]';
+      if (document.querySelectorAll('[data-unsliced-root]').length === 1) return '[data-unsliced-root]';
       const children = Array.from(document.body.children).filter(el => el.tagName !== 'STYLE');
       if (children.length === 1 && ['ARTICLE', 'MAIN', 'DIV', 'SECTION'].includes(children[0].tagName) && !Array.from(document.body.childNodes).some(n => n.nodeType === 3 && n.textContent.trim())) {
         if (children[0].id && document.querySelectorAll('#' + CSS.escape(children[0].id)).length === 1) return '#' + CSS.escape(children[0].id);
