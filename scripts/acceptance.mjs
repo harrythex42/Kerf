@@ -14,6 +14,7 @@ const samples = join(project, 'samples');
 const output = join(project, 'output', 'acceptance');
 const textVerifier = join(project, 'scripts', 'verify_pdf_text.py');
 const python = process.env.KERF_PYTHON || 'python3';
+process.env.PYTHONUTF8 = '1';
 const cases = {
   'breakflow-report-zh.html': { selector: '#community-report', expectBundledFont: true },
   'invoice.html': { selector: '#invoice-container' },
@@ -118,7 +119,7 @@ async function checkSample(browser, url, filename, strategy, splitLines, faults 
     row.cuts = tables.parts.reduce((sum, parts) => sum + parts.length - 1, 0);
     if (faults) await testTableFaults(page, directory, sections, checkTables);
 
-    execFileSync('pdftoppm', ['-r', '120', '-png', pdf, join(directory, 'page')]);
+    execFileSync(python, [join(project, 'scripts/render_pdf_pages.py'), pdf, join(directory, 'page'), '120']);
     const text = JSON.parse(execFileSync(python, [textVerifier, pdf], {
       encoding: 'utf8', input: JSON.stringify({ sections, headers: tables.headers })
     }));
@@ -219,7 +220,7 @@ function renderReport(rows) {
   ];
   for (const row of rows) {
     const status = row.details.length ? '失败' : '通过';
-    const link = row.pages ? `[${row.filename}](${relative(output, row.directory)}/document.pdf)` : row.filename;
+    const link = row.pages ? `[${row.filename}](${relative(output, row.directory).split(sep).join('/')}/document.pdf)` : row.filename;
     const textStatus = row.textMatches === undefined ? '—' : row.textMatches ? '完全一致' : '有差异，见下方';
     lines.push(`| ${link} | ${row.strategy === 'optimal' ? '全局最优' : '贪心'} | ${row.cost?.toFixed(2) ?? '—'} | ${status} | ${row.pages ?? '—'} | ${row.whitespace?.slice(0, -1).join('、') || '—'} | ${row.whitespace?.at(-1) ?? '—'} | ${row.parts?.map(p => p.join('+')).join('、') || '—'} | ${row.splits ?? '—'} | ${row.orphans ?? '—'} | ${textStatus} |`);
   }
@@ -230,8 +231,8 @@ function renderReport(rows) {
   return lines.join('\n') + '\n';
 }
 
-execFileSync(python, ['-c', 'import pypdf'], { stdio: 'inherit' });
-execFileSync('pdftoppm', ['-v'], { stdio: 'ignore' });
+execFileSync(python, ['-c', 'import pypdf, pymupdf'], { stdio: 'inherit' });
+
 const names = (await readdir(samples, { recursive: true })).filter(name => name.endsWith('.html')).sort();
 if (!names.length) throw new Error('samples/ 下找不到 HTML 验收样例。');
 await mkdir(output, { recursive: true });
@@ -260,7 +261,7 @@ try {
         const image = row.images?.[n];
         const title = (row.strategy === 'optimal' ? '全局最优' : '贪心') + ' · 第 ' + (n + 1) + ' 页';
         return '<figure><figcaption>' + title + '</figcaption>' + (image ?
-          '<img src="' + escape(relative(output, join(row.directory, image))) + '">' : '本版无此页') + '</figure>';
+          '<img src="' + escape(relative(output, join(row.directory, image)).split(sep).join('/')) + '">' : '本版无此页') + '</figure>';
       }).join('') + '</section>');
     }
   }

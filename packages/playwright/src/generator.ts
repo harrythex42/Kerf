@@ -19,6 +19,7 @@ function getBrowserBundleScript(): string {
   // Resolve path to @breakflow/browser/dist/index.global.js
   const currentDir = path.dirname(fileURLToPath(import.meta.url));
   const candidatePaths = [
+    path.resolve(currentDir, "index.global.js"),
     path.resolve(currentDir, '../../browser/dist/index.global.js'),
     path.resolve(currentDir, '../node_modules/@breakflow/browser/dist/index.global.js'),
     path.resolve(currentDir, '../../../node_modules/@breakflow/browser/dist/index.global.js')

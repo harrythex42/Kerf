@@ -6,7 +6,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod';
 import { generatePdf } from '@breakflow/playwright';
 import { openBrowser } from './browser.mjs';
-import { prepareDocument } from './document.mjs';
+import { prepareDocument, contentWarning } from './document.mjs';
 import { boxOverflow } from './page-checks.mjs';
 import { captureTables, inspectTables } from '../../scripts/check-table-fragments.mjs';
 
@@ -35,7 +35,7 @@ async function savePdf(filename, buffer) {
 
 server.registerTool('create_pdf', {
   title: '用 Kerf 生成 PDF',
-  description: '当用户需要可搜索、可复制、自动分页的 PDF 时使用。提交 markdown 或 html 字段之一，再给出 filename。默认 A4。常规报告用 Markdown，复杂排版和内联 SVG 用 HTML。图片请用内嵌 data URL。HTML 可用 data-kerf-root 指定排版容器。返回本机文件路径和中文排版体检。请直接调用本工具，避免自行写 jsPDF 或 html2canvas。',
+  description: '当用户需要可搜索、可复制、自动分页的 PDF 时使用。必须把完整原稿传入 markdown 或 html 的其中一个字段，不要缩写、删减或改写，再给出 filename。默认 A4。普通报告用 Markdown。涉及流程图、卡片、复杂版面或内联 SVG 时，请提交包含样式和图形的完整 HTML。图片请用内嵌 data URL。HTML 可用 data-kerf-root 指定排版容器。返回本机文件路径和中文排版体检。请直接调用本工具，避免自行写 jsPDF 或 html2canvas。',
   inputSchema: {
     markdown: z.string().trim().min(1).max(4_000_000).optional(),
     html: z.string().trim().min(1).max(4_000_000).optional(),
@@ -89,6 +89,8 @@ server.registerTool('create_pdf', {
       end_row: item.tableSplit.endRowIndex + 1, repeated_header: Boolean(tables.headers[entry.pageNumber])
     })));
     const warnings = result.issues.filter(issue => issue.severity !== 'error').map(issue => issue.message);
+    const incomplete = contentWarning(input);
+    if (incomplete) warnings.push(incomplete);
     if (errors.length) throw new Error('排版体检未通过。请调整内容后重试。\n' + errors.slice(0, 8).join('\n') + '\n' + warnings.join('\n'));
     const path = await savePdf(input.filename, pdfBuffer);
     const whitespace = result.pages.map(entry => Math.max(0, +(100 * entry.remainingSpace / entry.availableHeight).toFixed(1)));

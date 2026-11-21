@@ -89,6 +89,7 @@ if __name__ == "__main__":
                     embedded_fonts.add(str(face["/BaseFont"]))
     print(json.dumps({
         "pages": len(pages),
+        "paperPoints": [float(reader.pages[0].mediabox.width), float(reader.pages[0].mediabox.height)] if pages else [],
         "differences": errors + compare(sections, pages),
         "embeddedFonts": sorted(embedded_fonts)
     }, ensure_ascii=False))

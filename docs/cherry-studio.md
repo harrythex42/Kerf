@@ -30,6 +30,17 @@ Kerf 把 Markdown 或 HTML 排成可搜索、能复制文字的 PDF。默认用 
 
 ## 浏览器与排查
 
-Kerf 优先用电脑现有的 Google Chrome。首次调用时如果没有可用浏览器，会下载 Playwright 的 Chromium。详细下载进度和错误会写到 MCP 服务日志。支持 MCP 进度通知的客户端也会看到下载提示。下载超时或失败时可以检查网络，或安装 Chrome 后重新调用。Linux 如提示缺少系统库，可在项目目录运行 `npx --yes pnpm@12.3.4 exec playwright install-deps chromium`。
+Kerf 优先使用电脑现有的 Google Chrome 或 Microsoft Edge。首次调用时如果没有可用浏览器，会下载 Playwright 的 Chromium。详细下载进度和错误会写到 MCP 服务日志。支持 MCP 进度通知的客户端也会看到下载提示。下载超时或失败时可以检查网络，或安装 Chrome 后重新调用。Linux 如提示缺少系统库，可在项目目录运行 `npx --yes pnpm@12.3.4 exec playwright install-deps chromium`。
 
 Markdown 支持标题、列表、表格、代码块、引用和图片。图片以嵌入文档的 PNG、JPEG、GIF 或 WebP 提交，HTML 也可以使用内联 SVG。若助手提交了图片网址或本机路径，工具会提示改为嵌入图片。HTML 样式应随文档提交，可给正文容器加上 `data-kerf-root`。
+
+## npm 安装方式（包名确定并发布后）
+
+在 Windows 上先装 [Node.js](https://nodejs.org/zh-cn/download)，然后重启 Cherry Studio，让应用找到 npm。在 **设置 → MCP → 添加 → 快速创建** 中选择 **STDIO**。命令填写 `npx`（找不到时填 `npx.cmd`），参数分别填 `-y` 和发布后的包名。macOS 和 Linux 使用相同填法。不需要从 GitHub 下载项目。包名确认前，上面的源码配置可继续使用。
+
+## 国内网络与自定义镜像
+
+Kerf 依次尝试已安装的 **Chrome、Edge** 和缓存里的 Chromium。Windows 已经装了能启动的 Edge 时，通常可以直接使用。三个都不可用时才会首次下载 Playwright Chromium Headless Shell。
+
+- npm 包本身下载慢时，可以在 Cherry Studio 的 MCP 环境变量中设置 `npm_config_registry`，值可以填 `https://registry.npmmirror.com`。npm 镜像和浏览器镜像是两种设置。
+- Chromium 下载慢时，可以安装 [Microsoft Edge](https://www.microsoft.com/edge/download)，或将 `PLAYWRIGHT_DOWNLOAD_HOST` 设为组织提供的可信、兼容当前 Playwright 版本的镜像。只替换 Chromium 下载源可用 `PLAYWRIGHT_CHROMIUM_DOWNLOAD_HOST`。镜像必须提供该版本的构建和相应系统的文件。首次下载最多等待约 5 分钟，详细进度可看 MCP 日志。[Playwright 下载设置](https://playwright.dev/docs/browsers#download-from-artifact-repository)

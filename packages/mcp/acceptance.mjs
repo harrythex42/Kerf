@@ -11,10 +11,11 @@ import { sourceSections } from './page-checks.mjs';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const output = resolve(root, 'output', 'mcp');
 const python = process.env.KERF_PYTHON || 'python3';
+process.env.PYTHONUTF8 = '1';
 await mkdir(output, { recursive: true });
 const client = new Client({ name: 'kerf-acceptance', version: '1.0.0' });
 const transport = new StdioClientTransport({
-  command: process.execPath, args: [join(root, 'packages/mcp/server.mjs')],
+  command: process.execPath, args: [process.env.KERF_TEST_MCP_ENTRY || join(root, 'packages/mcp/server.mjs')],
   env: { ...process.env, KERF_OUTPUT_DIR: output }, stderr: 'inherit'
 });
 let browser;
@@ -37,7 +38,7 @@ try {
     }
     cases.push({ name, input: { html }, selector, split: name === 'table-long' });
   }
-  const call = args => client.callTool({ name: 'create_pdf', arguments: args }, undefined, { timeout: 190_000 });
+  const call = args => client.callTool({ name: 'create_pdf', arguments: args }, undefined, { timeout: 350_000, resetTimeoutOnProgress: true, onprogress: ({ message }) => console.error(message) });
   for (const sample of cases) {
     const result = await call({ filename: sample.name, ...sample.input });
     assert.equal(result.isError, undefined, JSON.stringify(result));
@@ -63,12 +64,14 @@ try {
     assert.equal(text.pages, pages);
     assert(text.embeddedFonts.some(font => font.includes('KerfSansSC')));
     if (sample.input.paper_size === 'A5') {
-      const info = execFileSync('pdfinfo', [path], { encoding: 'utf8' });
-      assert.match(info, /Page size:\s+(?:419|420)(?:\.\d+)? x 59[45](?:\.\d+)? pts/u);
+      const [width, height] = text.paperPoints;
+      assert(Math.abs(width - 419.53) < 1 && Math.abs(height - 595.28) < 1);
     }
-    execFileSync('pdftoppm', ['-r', '100', '-png', path, path.slice(0, -4)]);
+    execFileSync(python, [join(root, 'scripts/render_pdf_pages.py'), path, path.slice(0, -4), '100']);
     console.log('MCP 验收通过', sample.name, pages + ' 页', path);
   }
+  const incomplete = await call({ markdown: '这份报告的结论是因为', filename: '截断提示' });
+  assert.match(incomplete.structuredContent.warnings.join(' '), /可能被截断/u);
   assert((await call({ markdown: '![图片](https://example.com/trial.png)', filename: 'external' })).isError);
   assert((await call({ markdown: '文', html: '<p>文</p>', filename: 'wrong' })).isError);
   assert((await call({ markdown: '文', filename: '../bad' })).isError);
