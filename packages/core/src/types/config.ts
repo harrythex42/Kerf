@@ -55,6 +55,7 @@ export interface BreakFlowLogger {
 }
 
 export interface BreakFlowConfig {
+  optimal?: import("../strategy/optimal-strategy.js").OptimalOptions;
   /** Page dimensions and margins configuration */
   page?: PageConfig;
 
@@ -77,7 +78,7 @@ export interface BreakFlowConfig {
   /** Scoring engine penalties */
   penalties?: PaginationPenaltiesConfig;
 
-  /** Max pagination iteration steps before halting (infinite loop guard, default: 500) */
+  /** Max pagination iteration steps before halting (infinite loop guard, unlimited by default) */
   maxIterations?: number;
 
   /** Max allowed pages before aborting (default: 200) */

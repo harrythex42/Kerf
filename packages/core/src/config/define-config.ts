@@ -109,7 +109,7 @@ export function resolveConfig(config: BreakFlowConfig = {}): ResolvedBreakFlowCo
     rules,
     table,
     penalties,
-    maxIterations: config.maxIterations ?? 500,
+    maxIterations: config.maxIterations ?? Infinity,
     maxPages: config.maxPages ?? 200,
     logLevel: config.logLevel ?? 'warn',
     debug: config.debug ?? false

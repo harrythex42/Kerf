@@ -1,7 +1,7 @@
 import type { BreakFlowConfig, PaginationResult } from '@breakflow/core';
 import type { Page, Browser, BrowserContext } from 'playwright';
 
-export type BrowserStrategyOption = 'greedy-scored' | {
+export type BrowserStrategyOption = 'greedy-scored' | 'optimal' | {
   /** Trusted JavaScript that exposes a PaginationStrategy on window. */
   script: string;
   globalName: string;

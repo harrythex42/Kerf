@@ -6,3 +6,4 @@ export * from './scoring/scoring-engine.js';
 export * from './strategy/greedy-strategy.js';
 export * from './table/table-split-planner.js';
 export * from './utils/units.js';
+export * from './strategy/optimal-strategy.js';

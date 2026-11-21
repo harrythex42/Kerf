@@ -71,9 +71,10 @@ async function withPreparedPage<T>(
     }
 
     await page.emulateMedia({ media: 'print' });
-    const bodyFont = await page.evaluate(() =>
-      /\p{Script=Han}/u.test(document.body.innerText) ? getComputedStyle(document.body).fontFamily : null
-    );
+    const bodyFont = await page.evaluate(selector => {
+      const root = document.querySelector<HTMLElement>(selector);
+      return root && /\p{Script=Han}/u.test(root.innerText) ? getComputedStyle(root).fontFamily : null;
+    }, options.selector ?? 'body');
     if (bodyFont) {
       await page.route(FONT_URL, serveBundledFont);
       fontRouteInstalled = true;
@@ -85,7 +86,7 @@ async function withPreparedPage<T>(
           unicode-range: U+2E80-2FFF, U+3000-303F, U+31C0-31EF, U+3400-4DBF,
             U+4E00-9FFF, U+F900-FAFF, U+FE30-FE4F, U+FF00-FFEF, U+20000-323AF;
         }
-        body { font-family: "Kerf Sans SC", ${bodyFont}; }
+        body, :is(${options.selector ?? 'body'}) { font-family: "Kerf Sans SC", ${bodyFont} !important; }
       ` });
       await page.evaluate(async () => {
         const faces = await document.fonts.load('400 16px "Kerf Sans SC"', '中');
@@ -123,7 +124,7 @@ async function runPagination(
     await page.addScriptTag({ content: strategy.script });
   }
 
-  return page.evaluate(async ({ selector, config, globalName, mode }) => {
+  return page.evaluate(async ({ selector, config, globalName, mode, builtin }) => {
     const globals = window as unknown as Record<string, unknown>;
     const breakFlow = globals.BreakFlow as typeof import('@breakflow/browser') | undefined;
     if (!breakFlow?.createPaginator) {
@@ -135,12 +136,12 @@ async function runPagination(
       throw new Error(`[BreakFlow] Invalid pagination strategy on window.${globalName}.`);
     }
 
-    const paginator = breakFlow.createPaginator({ ...config, strategy });
+    const paginator = breakFlow.createPaginator({ ...config, strategy: strategy ?? builtin });
     const { pageCount, pages, issues, fixes, metrics } = mode === 'analyze'
       ? await paginator.analyze(selector)
       : await paginator.paginate(selector, { replaceOriginal: true, injectStyles: true });
     return { pageCount, pages, issues, fixes, metrics };
-  }, { selector, config, globalName, mode });
+  }, { selector, config, globalName, mode, builtin: typeof strategy === "string" ? strategy : undefined });
 }
 
 export async function generatePdf(options: GeneratePdfOptions): Promise<PdfResult> {

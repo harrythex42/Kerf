@@ -4,6 +4,7 @@ import { mkdir, readdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import { dirname, extname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
+import { pageCostModel } from '../packages/core/dist/index.js';
 import { generatePdf } from '../packages/playwright/dist/index.js';
 
 const project = fileURLToPath(new URL('../', import.meta.url));
@@ -22,7 +23,8 @@ const cases = {
       { selector: '#styled-paragraph', property: 'font-size', value: '19px' }
     ]
   },
-  'block-limit.html': { selector: '#report', expectedError: /Pagination exceeded maximum iterations \(500\)/u }
+  'block-limit.html': { selector: '#report' },
+  'report-genius-factory.html': { selector: '#rpt', expectBundledFont: true }
 };
 
 const contentTypes = {
@@ -101,18 +103,22 @@ async function boxOverflow(page) {
     const box = content.getBoundingClientRect();
     const style = getComputedStyle(content);
     const bottom = box.bottom - Number.parseFloat(style.paddingBottom);
-    return Array.from(content.querySelectorAll('[data-breakflow-node-id]')).filter(node => {
+    const top = box.top + Number.parseFloat(style.paddingTop);
+    const left = box.left + Number.parseFloat(style.paddingLeft);
+    const right = box.right - Number.parseFloat(style.paddingRight);
+    return Array.from(content.querySelectorAll('*')).filter(node => {
       const nodeBox = node.getBoundingClientRect();
-      return nodeBox.height > 0 && nodeBox.bottom > bottom + 2;
+      return nodeBox.height > 0 && (nodeBox.bottom > bottom + 0.05 || nodeBox.top < top - 0.05 ||
+        nodeBox.left < left - 0.05 || nodeBox.right > right + 0.05);
     }).map(node => `第 ${index + 1} 页的 ${node.id ? '#' + node.id : node.tagName.toLowerCase()} 超出可排版范围`);
   }));
 }
 
-async function checkSample(browser, url, filename) {
+async function checkSample(browser, url, filename, strategy) {
   const spec = cases[filename] ?? {};
-  const directory = join(output, filename.slice(0, -'.html'.length));
+  const directory = join(output, strategy, filename.slice(0, -'.html'.length));
   const pdf = join(directory, 'document.pdf');
-  const row = { filename, directory, details: [] };
+  const row = { filename, strategy, directory, details: [] };
   await prepareOutput(directory);
   const page = await browser.newPage({ viewport: { width: 794, height: 1123 } });
   try {
@@ -136,22 +142,17 @@ async function checkSample(browser, url, filename) {
       return 'body';
     });
     const sections = await sourceSections(page, selector);
-    let result;
-    try {
-      ({ result } = await generatePdf({ url, selector, output: pdf, playwrightPage: page, settleTimeoutMs: 0 }));
-    } catch (error) {
-      if (!spec.expectedError?.test(error.message)) throw error;
-      const generated = await readdir(directory);
-      if (generated.includes('document.pdf')) throw new Error('超限后留下了不完整的 PDF。');
-      row.expectedError = error.message.split('\n')[0];
-      return row;
-    }
+    const { result } = await generatePdf({ url, selector, strategy, output: pdf, playwrightPage: page, settleTimeoutMs: 0 });
 
     execFileSync('pdftoppm', ['-r', '120', '-png', pdf, join(directory, 'page')]);
     const text = JSON.parse(execFileSync(python, [textVerifier, pdf], {
       encoding: 'utf8', input: JSON.stringify(sections)
     }));
     row.pages = text.pages;
+    row.cost = result.pages.reduce((cost, page, i) => cost + pageCostModel().cost(
+      page.remainingSpace, result.metrics.lineHeightPx, i === result.pages.length - 1), 0);
+    row.notes = result.issues.map(issue => issue.message);
+    row.images = (await readdir(directory)).filter(name => /^page-\d+\.png$/u.test(name)).sort((a,b) => a.localeCompare(b, 'en', {numeric:true}));
     row.textMatches = text.differences.length === 0;
     row.whitespace = result.pages.map(entry => (100 * entry.remainingSpace / entry.availableHeight).toFixed(1) + '%');
     row.splits = new Set(result.pages.flatMap(entry => entry.items
@@ -162,7 +163,7 @@ async function checkSample(browser, url, filename) {
     if (spec.expectBundledFont && !text.embeddedFonts.some(name => /KerfSansSC/u.test(name))) {
       row.details.push('未在 PDF 中发现嵌入的 Kerf Sans SC 字体。');
     } else if (spec.expectBundledFont) {
-      row.notes = ['PDF 已嵌入随项目分发的 Kerf Sans SC。'];
+      row.notes.push('PDF 已嵌入随项目分发的 Kerf Sans SC。');
     }
     row.details.push(...await boxOverflow(page));
     row.details.push(...result.issues.filter(issue => issue.severity === 'error').map(issue => issue.message));
@@ -171,7 +172,6 @@ async function checkSample(browser, url, filename) {
     if (imageCount !== text.pages) row.details.push(`生成了 ${imageCount} 张页面图片，应有 ${text.pages} 张。`);
     if (row.splits) row.details.push(`有 ${row.splits} 个内容块被拆开。`);
     if (row.orphans) row.details.push(`有 ${row.orphans} 个标题落在页底，与后续内容分开。`);
-    if (spec.expectedError) row.details.push('预期因超过处理上限而明确报错，但生成了 PDF。');
     for (const style of spec.styles ?? []) {
       const values = await page.locator('.breakflow-page ' + style.selector).evaluateAll(
         (nodes, property) => nodes.map(node => getComputedStyle(node).getPropertyValue(property)), style.property
@@ -192,22 +192,21 @@ async function checkSample(browser, url, filename) {
 
 function renderReport(rows) {
   const lines = [
-    '# Kerf 排版验收', '',
+    '# Kerf 排版验收', '', '[打开逐页并排图片](comparison.html)', '',
     '留白以可排版高度为基准。最后一页单列，留白不计为缺点。',
     '有切块、页底标题、内容越界、页数不一致、文字差异或意外错误时，验收失败。', '',
-    '| 样例 | 结果 | PDF 页数 | 前几页留白 | 最后一页留白 | 切开的块 | 页底标题 | 文字核对 |',
-    '| --- | --- | ---: | --- | ---: | ---: | ---: | --- |'
+    '| 样例 | 算法 | 总代价 | 结果 | PDF 页数 | 前几页留白 | 最后一页留白 | 切开的块 | 页底标题 | 文字核对 |',
+    '| --- | --- | ---: | --- | ---: | --- | ---: | ---: | ---: | --- |'
   ];
   for (const row of rows) {
-    const status = row.details.length ? '失败' : row.expectedError ? '通过（按预期拒绝）' : '通过';
+    const status = row.details.length ? '失败' : '通过';
     const link = row.pages ? `[${row.filename}](${relative(output, row.directory)}/document.pdf)` : row.filename;
     const textStatus = row.textMatches === undefined ? '—' : row.textMatches ? '完全一致' : '有差异，见下方';
-    lines.push(`| ${link} | ${status} | ${row.pages ?? '—'} | ${row.whitespace?.slice(0, -1).join('、') || '—'} | ${row.whitespace?.at(-1) ?? '—'} | ${row.splits ?? '—'} | ${row.orphans ?? '—'} | ${textStatus} |`);
+    lines.push(`| ${link} | ${row.strategy === 'optimal' ? '全局最优' : '贪心'} | ${row.cost?.toFixed(2) ?? '—'} | ${status} | ${row.pages ?? '—'} | ${row.whitespace?.slice(0, -1).join('、') || '—'} | ${row.whitespace?.at(-1) ?? '—'} | ${row.splits ?? '—'} | ${row.orphans ?? '—'} | ${textStatus} |`);
   }
   for (const row of rows) {
     const details = [...row.details, ...(row.notes ?? [])];
-    if (row.expectedError) details.unshift(row.expectedError);
-    if (details.length) lines.push('', `## ${row.filename}`, '', ...details.map(detail => '- ' + detail));
+    if (details.length) lines.push('', `## ${row.filename} · ${row.strategy}`, '', ...details.map(detail => '- ' + detail));
   }
   return lines.join('\n') + '\n';
 }
@@ -227,8 +226,25 @@ try {
   const base = 'http://127.0.0.1:' + server.address().port;
   for (const name of names) {
     const path = name.split(sep).map(encodeURIComponent).join('/');
-    rows.push(await checkSample(browser, base + '/' + path, name));
+    for (const strategy of ['greedy-scored', 'optimal']) {
+      rows.push(await checkSample(browser, base + '/' + path, name, strategy));
+    }
   }
+  const escape = value => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('"', '&quot;');
+  const sections = [];
+  for (let i = 0; i < rows.length; i += 2) {
+    const pair = rows.slice(i, i + 2);
+    sections.push('<h2>' + escape(pair[0].filename) + '</h2>');
+    for (let n = 0; n < Math.max(...pair.map(row => row.images?.length ?? 0)); n++) {
+      sections.push('<section>' + pair.map(row => {
+        const image = row.images?.[n];
+        const title = (row.strategy === 'optimal' ? '全局最优' : '贪心') + ' · 第 ' + (n + 1) + ' 页';
+        return '<figure><figcaption>' + title + '</figcaption>' + (image ?
+          '<img src="' + escape(relative(output, join(row.directory, image))) + '">' : '本版无此页') + '</figure>';
+      }).join('') + '</section>');
+    }
+  }
+  await writeFile(join(output,'comparison.html'), '<!doctype html><meta charset="utf-8"><title>Kerf 逐页对比</title><style>body{background:#eef1f3;font:16px sans-serif;padding:1rem}section{display:grid;grid-template-columns:1fr 1fr;gap:12px}figure{margin:0}img{width:100%}figcaption{padding:.5rem}</style>' + sections.join(''));
   const report = renderReport(rows);
   await writeFile(join(output, 'report.md'), report);
   process.stdout.write(report);

@@ -4,6 +4,7 @@ import {
   type PaginationMetrics,
   type PaginationStrategy,
   resolveConfig,
+  OptimalStrategy,
   GreedyScoredStrategy
 } from '@breakflow/core';
 import { createIsolatedSandbox } from '../sandbox/iframe-sandbox.js';
@@ -35,7 +36,27 @@ export interface BrowserPaginationResult extends PaginationResult {
 }
 
 export interface BrowserPaginatorConfig extends BreakFlowConfig {
-  strategy?: PaginationStrategy | 'greedy-scored';
+  strategy?: PaginationStrategy | 'greedy-scored' | 'optimal';
+}
+
+function measureLineHeight(root: HTMLElement): number {
+  // Prefer prose over short captions and metadata when the document has both.
+  const paragraphs = Array.from(root.querySelectorAll('p')).filter(p => p.getClientRects().length);
+  const paragraph = paragraphs.reduce<HTMLElement | undefined>((longest, p) =>
+    !longest || p.innerText.length > longest.innerText.length ? p : longest, undefined) ?? root;
+  const style = root.ownerDocument.defaultView!.getComputedStyle(paragraph);
+  const explicit = parseFloat(style.lineHeight);
+  if (explicit > 0) return explicit;
+  const probe = root.ownerDocument.createElement('span');
+  probe.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;';
+  probe.style.font = style.font;
+  paragraph.appendChild(probe);
+  probe.textContent = 'M';
+  const single = probe.offsetHeight;
+  probe.textContent = 'M\nM';
+  const height = probe.offsetHeight - single;
+  probe.remove();
+  return height || single;
 }
 
 export class BrowserPaginator {
@@ -44,7 +65,8 @@ export class BrowserPaginator {
 
   constructor({ strategy, ...config }: BrowserPaginatorConfig = {}) {
     this.config = resolveConfig(config);
-    this.strategy = strategy && strategy !== 'greedy-scored' ? strategy : new GreedyScoredStrategy();
+    this.strategy = strategy === 'optimal' ? new OptimalStrategy(config.optimal) :
+      typeof strategy === 'object' ? strategy : new GreedyScoredStrategy();
   }
 
   private resolveTargetElement(target: string | HTMLElement): HTMLElement {
@@ -74,13 +96,16 @@ export class BrowserPaginator {
       // 2. Measure page and layout
       const measureStart = performance.now();
       const pageDims = measurePageDimensions(sandbox.doc, this.config.page);
-      const nodes = buildLayoutTree(sandbox.container.firstElementChild as HTMLElement || sandbox.container, this.config);
+      const clonedRoot = sandbox.container.firstElementChild as HTMLElement || sandbox.container;
+      const nodes = buildLayoutTree(clonedRoot, this.config);
       const measurementMs = performance.now() - measureStart;
 
       // 3. Planning
       const planStart = performance.now();
+      const lineHeightPx = measureLineHeight(clonedRoot);
       const plan = this.strategy.paginate({
         nodes,
+        lineHeightPx,
         pageContentHeight: pageDims.contentHeightPx,
         pageContentWidth: pageDims.contentWidthPx,
         config: this.config
@@ -90,6 +115,7 @@ export class BrowserPaginator {
       const totalMs = performance.now() - startTime;
 
       const metrics: PaginationMetrics = {
+        lineHeightPx,
         preparationMs,
         measurementMs,
         planningMs,
@@ -136,8 +162,10 @@ export class BrowserPaginator {
 
       // 3. Plan
       const planStart = performance.now();
+      const lineHeightPx = measureLineHeight(clonedRoot);
       const plan = this.strategy.paginate({
         nodes,
+        lineHeightPx,
         pageContentHeight: pageDims.contentHeightPx,
         pageContentWidth: pageDims.contentWidthPx,
         config: this.config
@@ -169,6 +197,7 @@ export class BrowserPaginator {
       const totalMs = performance.now() - startTime;
 
       const metrics: PaginationMetrics = {
+        lineHeightPx,
         preparationMs,
         measurementMs,
         planningMs,

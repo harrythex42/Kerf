@@ -2,7 +2,7 @@
 
 Kerf builds on [BreakFlow](https://github.com/mehmetduran932/BreakFlow)
 to generate paginated, searchable PDFs from documents. The packages keep their
-upstream `@breakflow/*` names. The original greedy strategy is the default.
+upstream `@breakflow/*` names. The original greedy strategy is the default. Set `strategy: "optimal"` for dynamic programming. See [pagination costs and validation](docs/optimal-pagination.md).
 
 ## Kerf acceptance checks
 
@@ -20,8 +20,7 @@ lower casing, duplicated text and visually similar characters are reported as
 differences. The report lists whitespace on the final page separately.
 For a new sample, mark its printable container with `data-kerf-root` if the
 entire page or its single top-level `main` or `article` is unsuitable.
-The block-limit sample passes when pagination raises the specified error
-before writing a PDF. Run `pnpm test` for the unit and Chromium test suites
+The former 500-block limit sample must print all 501 blocks. Run `pnpm test` for the unit and Chromium test suites
 after building the packages.
 
 The Playwright adapter includes Kerf Sans SC, derived from [Noto Sans SC](https://github.com/google/fonts/tree/main/ofl/notosanssc)

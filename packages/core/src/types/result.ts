@@ -2,6 +2,7 @@ import type { LayoutNode } from './node.js';
 import type { PaginationIssue, AppliedFix } from './issue.js';
 
 export interface PaginationMetrics {
+  lineHeightPx?: number;
   preparationMs: number;
   measurementMs: number;
   planningMs: number;

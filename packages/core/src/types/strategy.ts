@@ -5,6 +5,7 @@ import type { PaginationPlan } from './result.js';
 export interface PaginationInput {
   /** Root layout nodes to be paginated */
   nodes: LayoutNode[];
+  lineHeightPx?: number;
 
   /** Available printable content height per page in CSS pixels */
   pageContentHeight: number;
