@@ -45,4 +45,4 @@ Windows 备用填法用 `cmd.exe` 作命令，依次填 `/d`、`/c`、`npx`、`-
 Kerf 依次尝试已安装的 **Chrome、Edge** 和缓存里的 Chromium。Windows 已经装了能启动的 Edge 时，通常可以直接使用。三个都不可用时才会首次下载 Playwright Chromium Headless Shell。
 
 - npm 包本身下载慢时，可以在 Cherry Studio 的 MCP 环境变量中设置 `npm_config_registry`，值可以填 `https://registry.npmmirror.com`。npm 镜像和浏览器镜像是两种设置。
-- Chromium 下载慢时，可以安装 [Microsoft Edge](https://www.microsoft.com/edge/download)，或将 `PLAYWRIGHT_DOWNLOAD_HOST` 设为组织提供的可信、兼容当前 Playwright 版本的镜像。只替换 Chromium 下载源可用 `PLAYWRIGHT_CHROMIUM_DOWNLOAD_HOST`。镜像必须提供该版本的构建和相应系统的文件。首次下载最多等待约 5 分钟，详细进度可看 MCP 日志。[Playwright 下载设置](https://playwright.dev/docs/browsers#download-from-artifact-repository)
+- Chromium 下载慢时，可以安装 [Microsoft Edge](https://www.microsoft.com/edge/download)，或将 `PLAYWRIGHT_DOWNLOAD_HOST` 设为 `https://cdn.npmmirror.com/binaries/playwright`。这个地址已在 macOS 空缓存下实测下载成功。也可以填写组织提供的可信、兼容当前 Playwright 版本的镜像。只替换 Chromium 下载源可用 `PLAYWRIGHT_CHROMIUM_DOWNLOAD_HOST`。镜像必须提供该版本的构建和相应系统的文件。首次下载最多等待约 5 分钟，详细进度可看 MCP 日志。[Playwright 下载设置](https://playwright.dev/docs/browsers#download-from-artifact-repository)
