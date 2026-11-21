@@ -232,3 +232,35 @@ test.describe('BreakFlow Acceptance Criteria Scenarios', () => {
   });
 
 });
+
+test('Playwright uses the configured strategy for both analysis and PDF output', async ({ page }) => {
+  const options = {
+    html: '<main id="report"><p>First paragraph</p><p>Second paragraph</p></main>',
+    selector: '#report',
+    playwrightPage: page,
+    strategy: {
+      globalName: 'testPaginationStrategy',
+      script: `
+        window.testPaginationStrategy = {
+          name: 'forced-second-page-test',
+          paginate(input) {
+            input.nodes[1].rules.breakBefore = true;
+            return new BreakFlow.GreedyScoredStrategy().paginate(input);
+          }
+        };
+      `
+    }
+  };
+  expect((await analyzePdf(options)).pageCount).toBe(2);
+  expect((await generatePdf(options)).result.pageCount).toBe(2);
+  expect((await generatePdf({ ...options, strategy: 'greedy-scored' })).result.pageCount).toBe(1);
+});
+
+test('The page limit rejects the PDF before it can be written', async ({ page }) => {
+  await expect(generatePdf({
+    html: '<main id="report"><p>On page one</p><p data-breakflow="break-before">On page two</p></main>',
+    selector: '#report',
+    config: { maxPages: 1 },
+    playwrightPage: page,
+  })).rejects.toThrow('exceeded the maximum page count (1)');
+});

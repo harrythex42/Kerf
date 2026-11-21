@@ -34,3 +34,21 @@ jobs:
 
     - name: Run unit tests
       run: pnpm test:unit
+
+    - name: Set up Python for PDF text verification
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install Chromium and PDF inspection tools
+      run: |
+        pnpm exec playwright install --with-deps chromium
+        sudo apt-get update
+        sudo apt-get install -y poppler-utils
+        python3 -m pip install -r scripts/requirements.txt
+
+    - name: Run browser tests
+      run: pnpm test:browser
+
+    - name: Run sample acceptance checks
+      run: pnpm acceptance

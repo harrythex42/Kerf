@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>社区图书借阅试点报告</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.7 "Kerf Sans SC", sans-serif; color: #1e293b; }
+  h1, h2, p, figure { margin: 0; }
+  .hero { padding: 28px 32px; margin-bottom: 24px; background: #12384b; color: white; border-radius: 12px; }
+  .kicker { color: #bfe5dc; font-size: 13px; }
+  h1 { margin: 5px 0 8px; font-size: 34px; line-height: 1.2; }
+  h2 { font-size: 21px; color: #12384b; margin-bottom: 8px; }
+  .copy { margin-bottom: 18px; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 22px; }
+  .stat { padding: 14px; background: #eaf4f1; border-radius: 9px; }
+  .stat strong { display: block; font-size: 23px; color: #156050; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 24px; text-align: left; }
+  th, td { padding: 8px 12px; border-bottom: 1px solid #d7e4e8; }
+  th { background: #e7eef3; color: #12384b; }
+  tr:nth-child(even) { background: #f4f8fa; }
+  figure { padding: 16px 18px; background: #eaf4f1; border-radius: 9px; margin-bottom: 20px; }
+  .flow { display: flex; align-items: stretch; gap: 8px; padding-bottom: 10px; }
+  .step { flex: 1; background: white; text-align: center; padding: 10px 5px; border-radius: 6px; }
+  .step strong { display: block; color: #156050; }
+  .arrow { align-self: center; color: #156050; font-size: 20px; }
+  figcaption, .note { color: #415b67; font-size: 13px; }
+  .callout { padding: 12px 16px; border-left: 4px solid #2e8976; background: #eef6f4; margin-bottom: 16px; }
+  ul { padding-left: 24px; margin: 0 0 18px; }
+  li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<main id="community-report">
+  <header class="hero" data-breakflow="keep">
+    <p class="kicker">服务评估 · 分页测试用虚构报告</p>
+    <h1>社区图书借阅试点报告</h1>
+    <p>观察范围为六个社区服务点，记录借出数量、按时归还情况和现场办理流程。</p>
+  </header>
+  <h2 id="summary">试点摘要</h2>
+  <p class="copy">试点期间，居民可在任一服务点登记借书和归还。工作人员记录办理时间与书目状态，便于发现柜台拥堵和提醒遗漏。以下数字为虚构样例，用于检查中文、表格与流程图的分页效果。</p>
+  <div class="stats" data-breakflow="keep">
+    <div class="stat"><strong>6 个</strong>社区服务点</div>
+    <div class="stat"><strong>312 册</strong>累计借出</div>
+    <div class="stat"><strong>93.6%</strong>按时归还率</div>
+  </div>
+  <h2 id="table-title">各服务点办理情况</h2>
+  <table id="branch-table">
+    <thead><tr><th>服务点</th><th>借出册数</th><th>按时归还</th><th>现场反馈</th></tr></thead>
+    <tbody>
+      <tr><td>河滨书屋</td><td>68</td><td>64</td><td>周末办理量最高</td></tr>
+      <tr><td>南街驿站</td><td>54</td><td>50</td><td>自助查询使用较多</td></tr>
+      <tr><td>东园服务台</td><td>49</td><td>46</td><td>家长集中在傍晚到访</td></tr>
+      <tr><td>新桥阅览室</td><td>48</td><td>45</td><td>首次办理需要引导</td></tr>
+      <tr><td>松林社区站</td><td>47</td><td>44</td><td>跨点归还需求较多</td></tr>
+      <tr><td>西门便民点</td><td>46</td><td>43</td><td>提示牌位置需要调整</td></tr>
+    </tbody>
+  </table>
+  <h2 id="observations">现场观察</h2>
+  <p class="copy">周末客流集中在午后，居民经常需要先咨询书籍位置，再到柜台登记。经工作人员口头提示后，多数居民可以自行完成检索。六个服务点的差异主要集中在场地指引和首次办理。</p>
+  <div class="callout" data-breakflow="keep"><strong>记录口径</strong>　按时归还指在约定日期内完成归还登记。异地归还以接收服务点登记成功为准。</div>
+  <h2 id="flow-title">借阅与归还流程</h2>
+  <figure id="loan-flow" data-breakflow="keep">
+    <div class="flow">
+      <div class="step"><strong>登记</strong>核对读者资料</div><span class="arrow" aria-hidden="true">→</span>
+      <div class="step"><strong>选书</strong>检索书目位置</div><span class="arrow" aria-hidden="true">→</span>
+      <div class="step"><strong>借出</strong>确认归还日期</div><span class="arrow" aria-hidden="true">→</span>
+      <div class="step"><strong>归还</strong>更新书目状态</div>
+    </div>
+    <figcaption>图一　居民可在任一试点归还图书，接收方负责核对并更新状态。</figcaption>
+  </figure>
+  <h2 id="actions">下一轮验证</h2>
+  <ul>
+    <li>在客流高峰记录柜台等待时间，比较调整指引前后的差异。</li>
+    <li>在首次办理时增加一张简明指引，观察咨询次数是否下降。</li>
+    <li>统一记录跨点归还情况，检查归还状态是否及时同步。</li>
+  </ul>
+  <p class="note">字体核对样例：汉字「一」和部首「⼀」分别保留原字符。</p>
+  <p class="note">本报告由 AI 自拟，仅用于 BreakFlow 原版排版试跑。</p>
+</main>
+</body>
+</html>

@@ -1,4 +1,41 @@
-# BreakFlow
+# Kerf
+
+Kerf builds on [BreakFlow](https://github.com/mehmetduran932/BreakFlow)
+to generate paginated, searchable PDFs from documents. The packages keep their
+upstream `@breakflow/*` names. The original greedy strategy is the default.
+
+## Kerf acceptance checks
+
+Install the workspace dependencies with `pnpm install --frozen-lockfile` and
+Chromium with `pnpm exec playwright install chromium`. Install Poppler
+(`pdftoppm`) and run `python3 -m pip install -r scripts/requirements.txt`
+in your Python environment. Set `KERF_PYTHON` if that interpreter is available
+under another command, and `KERF_CHROMIUM` to use an existing Chromium executable.
+
+Run `pnpm acceptance` after every change. It checks each `.html` file in
+`samples/` and writes `output/acceptance/report.md`, a PDF per printable sample,
+and one PNG per page. A nonzero exit means a check failed. Text is compared in
+order, ignoring whitespace and preserving Unicode code points. Upper or
+lower casing, duplicated text and visually similar characters are reported as
+differences. The report lists whitespace on the final page separately.
+For a new sample, mark its printable container with `data-kerf-root` if the
+entire page or its single top-level `main` or `article` is unsuitable.
+The block-limit sample passes when pagination raises the specified error
+before writing a PDF. Run `pnpm test` for the unit and Chromium test suites
+after building the packages.
+
+The Playwright adapter includes Kerf Sans SC, derived from [Noto Sans SC](https://github.com/google/fonts/tree/main/ofl/notosanssc)
+under the [SIL Open Font License 1.1](packages/playwright/assets/fonts/OFL.txt).
+For HTML with its own CJK font declaration, list `"Kerf Sans SC"` first to
+use the bundled face. Keep the font license when redistributing it.
+
+The browser entry point accepts `createPaginator({ strategy })`, where
+`strategy` is an implementation of `PaginationStrategy`. Playwright accepts
+`strategy: { script, globalName }` in both `generatePdf` and `analyzePdf`.
+The JavaScript must be trusted and expose the strategy as `window[globalName]`.
+Use `strategy: 'greedy-scored'` to select the built-in strategy explicitly.
+
+## Upstream BreakFlow documentation
 
 > **Intelligent pagination for HTML and PDF.**  
 > *Fix broken page breaks before they reach your PDF.*

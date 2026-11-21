@@ -26,6 +26,18 @@ export function constructPaginatedDOM(
     contentEl.style.paddingBottom = pageConfig.margin.bottom;
     contentEl.style.paddingLeft = pageConfig.margin.left;
 
+    // Recreate the source scope so inherited styles and selectors such as #report > p match.
+    let contentTarget: HTMLElement = contentEl;
+    if (sandboxRoot.tagName.toLowerCase() !== 'body') {
+      contentTarget = sandboxRoot.cloneNode(false) as HTMLElement;
+      contentTarget.style.marginBlock = '0';
+      contentTarget.style.paddingBlock = '0';
+      contentTarget.style.minHeight = '0';
+      contentTarget.style.height = 'auto';
+      contentTarget.style.maxHeight = 'none';
+      contentEl.appendChild(contentTarget);
+    }
+
     for (const item of pageInfo.items) {
       const sourceEl = sandboxRoot.querySelector(`[data-breakflow-node-id="${item.nodeId}"]`) as HTMLElement | null;
       if (!sourceEl) continue;
@@ -33,10 +45,10 @@ export function constructPaginatedDOM(
       if (item.tableSplit?.isSplit) {
         // Construct table slice
         const tableSlice = createTableSlice(sourceEl, item.tableSplit, doc);
-        contentEl.appendChild(tableSlice);
+        contentTarget.appendChild(tableSlice);
       } else {
         const clonedNode = sourceEl.cloneNode(true) as HTMLElement;
-        contentEl.appendChild(clonedNode);
+        contentTarget.appendChild(clonedNode);
       }
     }
 

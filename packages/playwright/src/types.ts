@@ -1,6 +1,12 @@
 import type { BreakFlowConfig, PaginationResult } from '@breakflow/core';
 import type { Page, Browser, BrowserContext } from 'playwright';
 
+export type BrowserStrategyOption = 'greedy-scored' | {
+  /** Trusted JavaScript that exposes a PaginationStrategy on window. */
+  script: string;
+  globalName: string;
+};
+
 export interface GeneratePdfOptions {
   /** Target web page URL to load and paginate */
   url?: string;
@@ -16,6 +22,8 @@ export interface GeneratePdfOptions {
 
   /** BreakFlow pagination configuration */
   config?: BreakFlowConfig;
+  /** Defaults to the original greedy strategy. */
+  strategy?: BrowserStrategyOption;
 
   /** Page configuration shortcut */
   page?: BreakFlowConfig['page'];
@@ -38,6 +46,7 @@ export interface AnalyzePdfOptions {
   html?: string;
   selector?: string;
   config?: BreakFlowConfig;
+  strategy?: BrowserStrategyOption;
   playwrightPage?: Page;
   settleTimeoutMs?: number;
 }

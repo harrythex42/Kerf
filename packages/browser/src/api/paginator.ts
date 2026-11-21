@@ -2,6 +2,7 @@ import {
   type BreakFlowConfig,
   type PaginationResult,
   type PaginationMetrics,
+  type PaginationStrategy,
   resolveConfig,
   GreedyScoredStrategy
 } from '@breakflow/core';
@@ -33,13 +34,17 @@ export interface BrowserPaginationResult extends PaginationResult {
   styles: string;
 }
 
+export interface BrowserPaginatorConfig extends BreakFlowConfig {
+  strategy?: PaginationStrategy | 'greedy-scored';
+}
+
 export class BrowserPaginator {
   private readonly config;
   private readonly strategy;
 
-  constructor(userConfig: BreakFlowConfig = {}) {
-    this.config = resolveConfig(userConfig);
-    this.strategy = new GreedyScoredStrategy();
+  constructor({ strategy, ...config }: BrowserPaginatorConfig = {}) {
+    this.config = resolveConfig(config);
+    this.strategy = strategy && strategy !== 'greedy-scored' ? strategy : new GreedyScoredStrategy();
   }
 
   private resolveTargetElement(target: string | HTMLElement): HTMLElement {
@@ -190,7 +195,11 @@ export class BrowserPaginator {
 
       // 6. Optional in-place replacement
       if (options.replaceOriginal && sourceEl.parentNode) {
-        sourceEl.parentNode.replaceChild(paginatedRoot, sourceEl);
+        if (sourceEl === targetDoc.body) {
+          sourceEl.replaceChildren(paginatedRoot);
+        } else {
+          sourceEl.parentNode.replaceChild(paginatedRoot, sourceEl);
+        }
       }
 
       return result;
@@ -200,6 +209,6 @@ export class BrowserPaginator {
   }
 }
 
-export function createPaginator(config?: BreakFlowConfig): BrowserPaginator {
+export function createPaginator(config?: BrowserPaginatorConfig): BrowserPaginator {
   return new BrowserPaginator(config);
 }

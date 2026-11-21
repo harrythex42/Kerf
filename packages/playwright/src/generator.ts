@@ -1,14 +1,15 @@
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import fs from 'node:fs';
-import { chromium, type Browser, type Page } from 'playwright';
+import { chromium, type Browser, type Page, type Route } from 'playwright';
 import {
   type BreakFlowConfig,
   type PaginationResult,
+  type PaginationStrategy,
   resolveConfig,
   RendererError
 } from '@breakflow/core';
-import type { GeneratePdfOptions, AnalyzePdfOptions, PdfResult } from './types.js';
+import type { AnalyzePdfOptions, BrowserStrategyOption, GeneratePdfOptions, PdfResult } from './types.js';
 
 let cachedBundleScript: string | null = null;
 
@@ -35,179 +36,132 @@ function getBrowserBundleScript(): string {
   );
 }
 
-export async function generatePdf(options: GeneratePdfOptions): Promise<PdfResult> {
-  const {
-    url,
-    html,
-    selector = 'body',
-    output,
-    page: pageProp,
-    settleTimeoutMs = 200,
-    headless = true
-  } = options;
+const FONT_URL = 'https://breakflow.invalid/fonts/KerfSansSC.ttf';
+const FONT_PATH = fileURLToPath(new URL('../assets/fonts/KerfSansSC.ttf', import.meta.url));
 
-  if (!url && !html) {
-    throw new RendererError('Either "url" or "html" must be provided to generatePdf.');
+async function serveBundledFont(route: Route): Promise<void> {
+  await route.fulfill({
+    path: FONT_PATH,
+    contentType: 'font/ttf',
+    headers: { 'Access-Control-Allow-Origin': '*' }
+  });
+}
+
+async function withPreparedPage<T>(
+  options: AnalyzePdfOptions & { headless?: boolean },
+  run: (page: Page) => Promise<T>
+): Promise<T> {
+  if (!options.url && !options.html) {
+    throw new RendererError('Either "url" or "html" must be provided.');
   }
 
-  const rawConfig: BreakFlowConfig = {
-    ...options.config,
-    page: pageProp ?? options.config?.page
-  };
-  const resolved = resolveConfig(rawConfig);
-
-  let browser: Browser | null = null;
-  let page: Page = options.playwrightPage!;
-
+  let browser: Browser | undefined;
+  let page = options.playwrightPage;
+  let fontRouteInstalled = false;
   try {
     if (!page) {
-      browser = await chromium.launch({ headless });
+      browser = await chromium.launch({ headless: options.headless ?? true });
       page = await browser.newPage();
     }
 
-    // 1. Navigate to target URL or HTML content
-    if (url) {
-      await page.goto(url, { waitUntil: 'networkidle' });
-    } else if (html) {
-      await page.setContent(html, { waitUntil: 'networkidle' });
+    if (options.url) {
+      await page.goto(options.url, { waitUntil: 'networkidle' });
+    } else {
+      await page.setContent(options.html!, { waitUntil: 'networkidle' });
     }
 
-    // 2. Emulate Print Media
     await page.emulateMedia({ media: 'print' });
-
-    // 3. Settle and font readiness
-    await page.evaluate(async () => {
-      if (document.fonts) {
-        await document.fonts.ready;
-      }
-    });
-
+    const bodyFont = await page.evaluate(() =>
+      /\p{Script=Han}/u.test(document.body.innerText) ? getComputedStyle(document.body).fontFamily : null
+    );
+    if (bodyFont) {
+      await page.route(FONT_URL, serveBundledFont);
+      fontRouteInstalled = true;
+      await page.addStyleTag({ content: `
+        @font-face {
+          font-family: "Kerf Sans SC";
+          src: url("${FONT_URL}") format("truetype");
+          font-weight: 400;
+          unicode-range: U+2E80-2FFF, U+3000-303F, U+31C0-31EF, U+3400-4DBF,
+            U+4E00-9FFF, U+F900-FAFF, U+FE30-FE4F, U+FF00-FFEF, U+20000-323AF;
+        }
+        body { font-family: "Kerf Sans SC", ${bodyFont}; }
+      ` });
+      await page.evaluate(async () => {
+        const faces = await document.fonts.load('400 16px "Kerf Sans SC"', '中');
+        if (!faces.length) throw new Error('[BreakFlow] The bundled Kerf Sans SC font did not load.');
+      });
+    }
+    await page.evaluate(() => document.fonts.ready.then(() => undefined));
+    const settleTimeoutMs = options.settleTimeoutMs ?? 200;
     if (settleTimeoutMs > 0) {
       await page.waitForTimeout(settleTimeoutMs);
     }
+    await page.addScriptTag({ content: getBrowserBundleScript() });
 
-    // 4. Inject BreakFlow Browser Bundle
-    const bundleScript = getBrowserBundleScript();
-    await page.addScriptTag({ content: bundleScript });
-
-    // 5. Run Pagination in Chromium context
-    const paginationResult = await page.evaluate(
-      async ({ sel, cfg }) => {
-        const BreakFlow = (window as unknown as { BreakFlow: typeof import('@breakflow/browser') }).BreakFlow;
-        if (!BreakFlow || !BreakFlow.createPaginator) {
-          throw new Error('[BreakFlow] Failed to load BreakFlow engine into browser context.');
-        }
-
-        const paginator = BreakFlow.createPaginator(cfg);
-        const res = await paginator.paginate(sel, {
-          replaceOriginal: true,
-          injectStyles: true
-        });
-
-        return {
-          pageCount: res.pageCount,
-          pages: res.pages,
-          issues: res.issues,
-          fixes: res.fixes,
-          metrics: res.metrics
-        };
-      },
-      { sel: selector, cfg: rawConfig }
-    );
-
-    // 6. Generate PDF via Chromium Print
-    const pdfFormat = resolved.page.format ?? 'A4';
-    const pdfBuffer = await page.pdf({
-      path: output,
-      format: pdfFormat,
-      printBackground: true,
-      margin: {
-        top: '0px',
-        bottom: '0px',
-        left: '0px',
-        right: '0px'
-      }
-    });
-
-    return {
-      pdfBuffer: Buffer.from(pdfBuffer),
-      outputPath: output,
-      result: paginationResult
-    };
+    return await run(page);
   } finally {
+    if (fontRouteInstalled) {
+      await page!.unroute(FONT_URL, serveBundledFont);
+    }
     if (browser) {
       await browser.close();
     }
   }
 }
 
-export async function analyzePdf(options: AnalyzePdfOptions): Promise<PaginationResult> {
-  const {
-    url,
-    html,
-    selector = 'body',
-    settleTimeoutMs = 200
-  } = options;
-
-  if (!url && !html) {
-    throw new RendererError('Either "url" or "html" must be provided to analyzePdf.');
+async function runPagination(
+  page: Page,
+  selector: string,
+  config: BreakFlowConfig | undefined,
+  strategy: BrowserStrategyOption | undefined,
+  mode: 'analyze' | 'paginate'
+): Promise<PaginationResult> {
+  let globalName: string | undefined;
+  if (typeof strategy === 'object') {
+    globalName = strategy.globalName;
+    await page.addScriptTag({ content: strategy.script });
   }
 
-  let browser: Browser | null = null;
-  let page: Page = options.playwrightPage!;
-
-  try {
-    if (!page) {
-      browser = await chromium.launch({ headless: true });
-      page = await browser.newPage();
+  return page.evaluate(async ({ selector, config, globalName, mode }) => {
+    const globals = window as unknown as Record<string, unknown>;
+    const breakFlow = globals.BreakFlow as typeof import('@breakflow/browser') | undefined;
+    if (!breakFlow?.createPaginator) {
+      throw new Error('[BreakFlow] Failed to load BreakFlow engine into browser context.');
     }
 
-    if (url) {
-      await page.goto(url, { waitUntil: 'networkidle' });
-    } else if (html) {
-      await page.setContent(html, { waitUntil: 'networkidle' });
+    const strategy = globalName === undefined ? undefined : globals[globalName] as PaginationStrategy | undefined;
+    if (globalName !== undefined && (typeof strategy?.name !== 'string' || typeof strategy.paginate !== 'function')) {
+      throw new Error(`[BreakFlow] Invalid pagination strategy on window.${globalName}.`);
     }
 
-    await page.emulateMedia({ media: 'print' });
+    const paginator = breakFlow.createPaginator({ ...config, strategy });
+    const { pageCount, pages, issues, fixes, metrics } = mode === 'analyze'
+      ? await paginator.analyze(selector)
+      : await paginator.paginate(selector, { replaceOriginal: true, injectStyles: true });
+    return { pageCount, pages, issues, fixes, metrics };
+  }, { selector, config, globalName, mode });
+}
 
-    await page.evaluate(async () => {
-      if (document.fonts) {
-        await document.fonts.ready;
-      }
+export async function generatePdf(options: GeneratePdfOptions): Promise<PdfResult> {
+  const { selector = 'body', output } = options;
+  const config = { ...options.config, page: options.page ?? options.config?.page };
+  const resolved = resolveConfig(config);
+
+  return withPreparedPage(options, async page => {
+    const result = await runPagination(page, selector, config, options.strategy, 'paginate');
+    const pdfBuffer = await page.pdf({
+      path: output,
+      format: resolved.page.format ?? 'A4',
+      printBackground: true,
+      margin: { top: '0px', bottom: '0px', left: '0px', right: '0px' }
     });
+    return { pdfBuffer: Buffer.from(pdfBuffer), outputPath: output, result };
+  });
+}
 
-    if (settleTimeoutMs > 0) {
-      await page.waitForTimeout(settleTimeoutMs);
-    }
-
-    const bundleScript = getBrowserBundleScript();
-    await page.addScriptTag({ content: bundleScript });
-
-    const result = await page.evaluate(
-      async ({ sel, cfg }) => {
-        const BreakFlow = (window as unknown as { BreakFlow: typeof import('@breakflow/browser') }).BreakFlow;
-        if (!BreakFlow || !BreakFlow.createPaginator) {
-          throw new Error('[BreakFlow] Failed to load BreakFlow engine into browser context.');
-        }
-
-        const paginator = BreakFlow.createPaginator(cfg);
-        const res = await paginator.analyze(sel);
-
-        return {
-          pageCount: res.pageCount,
-          pages: res.pages,
-          issues: res.issues,
-          fixes: res.fixes,
-          metrics: res.metrics
-        };
-      },
-      { sel: selector, cfg: options.config }
-    );
-
-    return result;
-  } finally {
-    if (browser) {
-      await browser.close();
-    }
-  }
+export async function analyzePdf(options: AnalyzePdfOptions): Promise<PaginationResult> {
+  return withPreparedPage(options, page =>
+    runPagination(page, options.selector ?? 'body', options.config, options.strategy, 'analyze')
+  );
 }

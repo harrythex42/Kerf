@@ -11,3 +11,6 @@ examples/cv/page-1-preview.png
 examples/cv/page-2-preview.png
 dist-packages/
 *.zip
+output/
+.pnpm-store/
+__pycache__/

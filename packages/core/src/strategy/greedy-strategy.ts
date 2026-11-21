@@ -11,6 +11,7 @@ import type { PaginationIssue, AppliedFix } from '../types/issue.js';
 import type { LayoutNode } from '../types/node.js';
 import { ScoringEngine } from '../scoring/scoring-engine.js';
 import { planTablePagination } from '../table/table-split-planner.js';
+import { PaginationError } from '../errors/errors.js';
 
 export class GreedyScoredStrategy implements PaginationStrategy {
   public readonly name = 'greedy-scored';
@@ -32,6 +33,9 @@ export class GreedyScoredStrategy implements PaginationStrategy {
       if (currentPageItems.length === 0 && !hasForcedBreak) {
         return;
       }
+      if (pages.length >= config.maxPages) {
+        throw new PaginationError(`Pagination exceeded the maximum page count (${config.maxPages}).`);
+      }
       pages.push({
         pageNumber: currentPageNumber++,
         contentHeight: currentHeight,
@@ -49,20 +53,7 @@ export class GreedyScoredStrategy implements PaginationStrategy {
     while (i < nodes.length) {
       iterationCount++;
       if (iterationCount > config.maxIterations) {
-        issues.push({
-          type: 'overflow',
-          severity: 'error',
-          message: `Pagination loop terminated: exceeded maximum iterations (${config.maxIterations}).`
-        });
-        break;
-      }
-      if (pages.length >= config.maxPages) {
-        issues.push({
-          type: 'overflow',
-          severity: 'error',
-          message: `Pagination terminated: reached maximum page limit (${config.maxPages}).`
-        });
-        break;
+        throw new PaginationError(`Pagination exceeded maximum iterations (${config.maxIterations}).`);
       }
 
       const node = nodes[i]!;

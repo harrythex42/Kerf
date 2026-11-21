@@ -65,6 +65,7 @@ export async function createIsolatedSandbox(
   clonedTarget.style.boxSizing = 'border-box';
   container.appendChild(clonedTarget);
   iframeDoc.body.appendChild(container);
+  wrapRootText(clonedTarget);
 
   // Wait for fonts and images in the sandbox document to settle
   await waitForAssets(iframeDoc);
@@ -85,4 +86,33 @@ export async function createIsolatedSandbox(
     container,
     cleanup
   };
+}
+
+function wrapRootText(root: HTMLElement): void {
+  const children = Array.from(root.childNodes);
+  if (!children.some(node => node.nodeType === 3 && node.textContent?.trim())) return;
+
+  let inlineRun: Node[] = [];
+  const flushInlineRun = () => {
+    const hasText = inlineRun.some(node => node.nodeType === 3 && node.textContent?.trim());
+    if (hasText) {
+      const block = root.ownerDocument.createElement('span');
+      block.style.display = 'block';
+      root.insertBefore(block, inlineRun[0]!);
+      block.append(...inlineRun);
+    }
+    inlineRun = [];
+  };
+
+  const view = root.ownerDocument.defaultView!;
+  for (const node of children) {
+    const isInline = node.nodeType === 1 &&
+      view.getComputedStyle(node as Element).display.startsWith('inline');
+    if (node.nodeType === 3 || isInline) {
+      inlineRun.push(node);
+    } else {
+      flushInlineRun();
+    }
+  }
+  flushInlineRun();
 }

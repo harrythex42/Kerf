@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "build": "turbo run build",
-    "test": "turbo run test",
+    "test": "vitest run && playwright test",
     "test:unit": "vitest run",
     "test:browser": "playwright test",
+    "acceptance": "turbo run build && node scripts/acceptance.mjs",
     "typecheck": "turbo run typecheck",
     "lint": "eslint packages/**/src --ext .ts",
     "clean": "turbo run clean"

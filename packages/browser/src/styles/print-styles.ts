@@ -17,6 +17,10 @@ export function generatePrintStyles(pageConfig: ResolvedPageConfig): string {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
+  /* Keep discretionary glyph combinations from changing the extracted text. */
+  :where(body, body *) {
+    font-variant-ligatures: none !important;
+  }
 }
 
 .breakflow-container {
