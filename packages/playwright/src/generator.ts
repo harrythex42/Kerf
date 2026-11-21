@@ -37,8 +37,8 @@ function getBrowserBundleScript(): string {
   );
 }
 
-const FONT_URL = 'https://breakflow.invalid/fonts/KerfSansSC.ttf';
-const FONT_PATH = fileURLToPath(new URL('../assets/fonts/KerfSansSC.ttf', import.meta.url));
+const FONT_URL = 'https://breakflow.invalid/fonts/UnslicedSansSC.ttf';
+const FONT_PATH = fileURLToPath(new URL('../assets/fonts/UnslicedSansSC.ttf', import.meta.url));
 
 async function serveBundledFont(route: Route): Promise<void> {
   await route.fulfill({
@@ -77,7 +77,7 @@ async function withPreparedPage<T>(
       if (!root || !/\p{Script=Han}/u.test(root.innerText)) return null;
       root.setAttribute('data-breakflow-cjk-root', '');
       const font = getComputedStyle(root).fontFamily;
-      root.style.setProperty('font-family', '"Kerf Sans SC", ' + font, 'important');
+      root.style.setProperty('font-family', '"Unsliced Sans SC", ' + font, 'important');
       return font;
     }, options.selector ?? 'body');
     if (bodyFont) {
@@ -85,17 +85,17 @@ async function withPreparedPage<T>(
       fontRouteInstalled = true;
       await page.addStyleTag({ content: `
         @font-face {
-          font-family: "Kerf Sans SC";
+          font-family: "Unsliced Sans SC";
           src: url("${FONT_URL}") format("truetype");
           font-weight: 400;
           unicode-range: U+2E80-2FFF, U+3000-303F, U+31C0-31EF, U+3400-4DBF,
             U+4E00-9FFF, U+F900-FAFF, U+FE30-FE4F, U+FF00-FFEF, U+20000-323AF;
         }
-        body, [data-breakflow-cjk-root] { font-family: "Kerf Sans SC", ${bodyFont} !important; }
+        body, [data-breakflow-cjk-root] { font-family: "Unsliced Sans SC", ${bodyFont} !important; }
       ` });
       await page.evaluate(async () => {
-        const faces = await document.fonts.load('400 16px "Kerf Sans SC"', '中');
-        if (!faces.length) throw new Error('[BreakFlow] The bundled Kerf Sans SC font did not load.');
+        const faces = await document.fonts.load('400 16px "Unsliced Sans SC"', '中');
+        if (!faces.length) throw new Error('[BreakFlow] The bundled Unsliced Sans SC font did not load.');
       });
     }
     await page.evaluate(() => document.fonts.ready.then(() => undefined));

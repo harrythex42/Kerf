@@ -13,7 +13,7 @@ const project = fileURLToPath(new URL('../', import.meta.url));
 const samples = join(project, 'samples');
 const output = join(project, 'output', 'acceptance');
 const textVerifier = join(project, 'scripts', 'verify_pdf_text.py');
-const python = process.env.KERF_PYTHON || 'python3';
+const python = process.env.UNSLICED_PYTHON || 'python3';
 process.env.PYTHONUTF8 = '1';
 const cases = {
   'breakflow-report-zh.html': { selector: '#community-report', expectBundledFont: true },
@@ -83,7 +83,7 @@ async function checkSample(browser, url, filename, strategy, splitLines, faults 
     await page.emulateMedia({ media: 'print' });
     await page.goto(url, { waitUntil: 'networkidle' });
     const selector = spec.selector ?? await page.evaluate(() => {
-      if (document.querySelectorAll('[data-kerf-root]').length === 1) return '[data-kerf-root]';
+      if (document.querySelectorAll('[data-unsliced-root]').length === 1) return '[data-unsliced-root]';
       const body = document.body;
       const visibleChildren = Array.from(body.children).filter(element =>
         !element.matches('script, style, template, noscript') &&
@@ -135,10 +135,10 @@ async function checkSample(browser, url, filename, strategy, splitLines, faults 
     row.splits += result.fixes.filter(fix => fix.type === 'split-oversized-element').length;
     row.orphans = result.pages.slice(0, -1).filter(entry => /^h[1-6]$/iu.test(entry.items.at(-1)?.tagName ?? '')).length;
     row.details.push(...text.differences);
-    if (spec.expectBundledFont && !text.embeddedFonts.some(name => /KerfSansSC/u.test(name))) {
-      row.details.push('未在 PDF 中发现嵌入的 Kerf Sans SC 字体。');
+    if (spec.expectBundledFont && !text.embeddedFonts.some(name => /UnslicedSansSC/u.test(name))) {
+      row.details.push('未在 PDF 中发现嵌入的 Unsliced Sans SC 字体。');
     } else if (spec.expectBundledFont) {
-      row.notes.push('PDF 已嵌入随项目分发的 Kerf Sans SC。');
+      row.notes.push('PDF 已嵌入随项目分发的 Unsliced Sans SC。');
     }
     row.details.push(...await boxOverflow(page));
     row.details.push(...result.issues.filter(issue => issue.severity === 'error').map(issue => issue.message));
@@ -212,7 +212,7 @@ async function testTableFaults(page, directory, sections, inspect) {
 
 function renderReport(rows) {
   const lines = [
-    '# Kerf 排版验收', '', '[打开逐页并排图片](comparison.html)', '',
+    '# Unsliced 排版验收', '', '[打开逐页并排图片](comparison.html)', '',
     '留白以可排版高度为基准。最后一页单列，留白不计为缺点。',
     '表格只允许在完整数据行之间分页。续页逐行核对原表和表头。有意外切块、页底标题、内容越界、页数不一致、文字差异或意外错误时，验收失败。', '',
     '| 样例 | 算法 | 总代价 | 结果 | PDF 页数 | 前几页留白 | 最后一页留白 | 表格各段行数 | 意外切块 | 页底标题 | 文字核对 |',
@@ -239,8 +239,8 @@ await mkdir(output, { recursive: true });
 const server = await startSampleServer();
 let browser;
 try {
-  browser = await chromium.launch(process.env.KERF_CHROMIUM
-    ? { executablePath: process.env.KERF_CHROMIUM }
+  browser = await chromium.launch(process.env.UNSLICED_CHROMIUM
+    ? { executablePath: process.env.UNSLICED_CHROMIUM }
     : {});
   const rows = [];
   const base = 'http://127.0.0.1:' + server.address().port;
@@ -265,7 +265,7 @@ try {
       }).join('') + '</section>');
     }
   }
-  await writeFile(join(output,'comparison.html'), '<!doctype html><meta charset="utf-8"><title>Kerf 逐页对比</title><style>body{background:#eef1f3;font:16px sans-serif;padding:1rem}section{display:grid;grid-template-columns:1fr 1fr;gap:12px}figure{margin:0}img{width:100%}figcaption{padding:.5rem}</style>' + sections.join(''));
+  await writeFile(join(output,'comparison.html'), '<!doctype html><meta charset="utf-8"><title>Unsliced 逐页对比</title><style>body{background:#eef1f3;font:16px sans-serif;padding:1rem}section{display:grid;grid-template-columns:1fr 1fr;gap:12px}figure{margin:0}img{width:100%}figcaption{padding:.5rem}</style>' + sections.join(''));
   const sweep = [];
   if (process.argv.includes('--sweep')) {
     for (const name of names.filter(name => name === 'invoice.html' || name.startsWith('table-'))) {

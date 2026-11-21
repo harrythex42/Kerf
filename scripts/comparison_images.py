@@ -10,7 +10,7 @@ from PIL import Image, ImageDraw, ImageFont
 root = Path(__file__).resolve().parents[1]
 output = root / "output/acceptance"
 dest = root / "docs/comparison"
-font_path = root / "packages/playwright/assets/fonts/KerfSansSC.ttf"
+font_path = root / "packages/playwright/assets/fonts/UnslicedSansSC.ttf"
 font = ImageFont.truetype(str(font_path), 21)
 large = ImageFont.truetype(str(font_path), 30)
 small = ImageFont.truetype(str(font_path), 16)
@@ -58,7 +58,7 @@ def figures():
         docs[Path(row["filename"]).stem].append(row)
     for row in data["sweep"]:
         trials[Path(row["filename"]).stem].append(row)
-    lines = ["# Kerf 分页对比", "", "每张图从上到下排列同一份文档的各页。灰色空位表示该版本已结束。"
+    lines = ["# Unsliced 分页对比", "", "每张图从上到下排列同一份文档的各页。灰色空位表示该版本已结束。"
              "留白以分页时测得的可排版高度计算，末页留白不计代价。", "",
              "| 样例 | 贪心、最优逐页图 | 总代价（贪心 / 最优） | 页数（贪心 / 最优） |",
              "| --- | --- | ---: | ---: |"]

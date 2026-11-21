@@ -27,15 +27,15 @@ function installChromium(progress) {
 }
 
 export async function openBrowser(progress) {
-  if (process.env.KERF_CHROME) return chromium.launch({ executablePath: process.env.KERF_CHROME, timeout: 15000 });
+  if (process.env.UNSLICED_CHROME) return chromium.launch({ executablePath: process.env.UNSLICED_CHROME, timeout: 15000 });
   // Playwright's channel discovery covers standard Google Chrome installations.
-  if (!process.env.KERF_USE_BUNDLED_BROWSER) {
+  if (!process.env.UNSLICED_USE_BUNDLED_BROWSER) {
     for (const channel of ['chrome', 'msedge']) {
       try {
         return await chromium.launch({ channel, timeout: 10000 });
       } catch (error) {
         if (!/not found|doesn.t exist|distribution/i.test(error.message)) {
-          console.error('[Kerf] ' + channel + ' 启动失败。', error.message.split('\n')[0]);
+          console.error('[Unsliced] ' + channel + ' 启动失败。', error.message.split('\n')[0]);
         }
       }
     }

@@ -10,13 +10,13 @@ import { sourceSections } from './page-checks.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const output = resolve(root, 'output', 'mcp');
-const python = process.env.KERF_PYTHON || 'python3';
+const python = process.env.UNSLICED_PYTHON || 'python3';
 process.env.PYTHONUTF8 = '1';
 await mkdir(output, { recursive: true });
-const client = new Client({ name: 'kerf-acceptance', version: '1.0.0' });
+const client = new Client({ name: 'unsliced-acceptance', version: '1.0.0' });
 const transport = new StdioClientTransport({
-  command: process.execPath, args: [process.env.KERF_TEST_MCP_ENTRY || join(root, 'packages/mcp/server.mjs')],
-  env: { ...process.env, KERF_OUTPUT_DIR: output }, stderr: 'inherit'
+  command: process.execPath, args: [process.env.UNSLICED_TEST_MCP_ENTRY || join(root, 'packages/mcp/server.mjs')],
+  env: { ...process.env, UNSLICED_OUTPUT_DIR: output }, stderr: 'inherit'
 });
 let browser;
 const image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==';
@@ -62,7 +62,7 @@ try {
     }));
     assert.deepEqual(text.differences, []);
     assert.equal(text.pages, pages);
-    assert(text.embeddedFonts.some(font => font.includes('KerfSansSC')));
+    assert(text.embeddedFonts.some(font => font.includes('UnslicedSansSC')));
     if (sample.input.paper_size === 'A5') {
       const [width, height] = text.paperPoints;
       assert(Math.abs(width - 419.53) < 1 && Math.abs(height - 595.28) < 1);

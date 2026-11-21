@@ -14,7 +14,7 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     env:
-      KERF_PYTHON: python
+      UNSLICED_PYTHON: python
 
     steps:
     - name: Checkout repository
@@ -22,7 +22,7 @@ jobs:
 
     - name: Set a new browser cache for this job
       shell: bash
-      run: echo "PLAYWRIGHT_BROWSERS_PATH=$RUNNER_TEMP/kerf-first-chromium" >> "$GITHUB_ENV"
+      run: echo "PLAYWRIGHT_BROWSERS_PATH=$RUNNER_TEMP/unsliced-first-chromium" >> "$GITHUB_ENV"
 
     - name: Install pnpm
       uses: pnpm/action-setup@v4
@@ -58,17 +58,17 @@ jobs:
       run: pnpm exec playwright install-deps chromium
 
     - name: Pack standalone npm package
-      run: node scripts/pack-mcp.mjs kerf-local-release-test
+      run: node scripts/pack-mcp.mjs
 
     - name: Install package outside the workspace
       shell: bash
-      run: npm install --prefix "$RUNNER_TEMP/kerf-pack-test" ./output/npm/kerf-local-release-test-0.1.2.tgz
+      run: npm install --prefix "$RUNNER_TEMP/unsliced-pack-test" ./output/npm/unsliced-pdf-mcp-0.1.2.tgz
 
     - name: Run packed MCP PDF acceptance with first browser download
       run: pnpm test:mcp
       env:
-        KERF_USE_BUNDLED_BROWSER: '1'
-        KERF_TEST_MCP_ENTRY: ${{ runner.temp }}/kerf-pack-test/node_modules/kerf-local-release-test/dist/server.mjs
+        UNSLICED_USE_BUNDLED_BROWSER: '1'
+        UNSLICED_TEST_MCP_ENTRY: ${{ runner.temp }}/unsliced-pack-test/node_modules/unsliced-pdf-mcp/dist/server.mjs
 
     - name: Run browser tests
       run: pnpm test:browser

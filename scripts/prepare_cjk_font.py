@@ -1,6 +1,6 @@
 """Create a PDF text-friendly derivative of the upstream Noto Sans SC TTF.
 
-Requires fonttools. Usage: python prepare_cjk_font.py upstream.ttf KerfSansSC.ttf
+Requires fonttools. Usage: python prepare_cjk_font.py upstream.ttf UnslicedSansSC.ttf
 """
 
 from collections import defaultdict
@@ -33,7 +33,7 @@ def font_with_distinct_characters(source: Path, destination: Path) -> None:
         # Keep the main ideograph in the original font's shaping tables.
         ranked = sorted(characters, key=lambda cp: (not (0x3400 <= cp <= 0x9FFF), cp))
         for character in ranked[1:]:
-            alternate = f"kerf_uni{character:X}_{len(order)}"
+            alternate = f"unsliced_uni{character:X}_{len(order)}"
             glyf[alternate] = copy(glyf[glyph])
             for table in metrics:
                 table[alternate] = table[glyph]
@@ -44,9 +44,9 @@ def font_with_distinct_characters(source: Path, destination: Path) -> None:
 
     font.setGlyphOrder(order)
     names = {
-        1: "Kerf Sans SC", 2: "Regular", 3: "Kerf Sans SC Regular",
-        4: "Kerf Sans SC Regular", 6: "KerfSansSC-Regular",
-        16: "Kerf Sans SC", 17: "Regular",
+        1: "Unsliced Sans SC", 2: "Regular", 3: "Unsliced Sans SC Regular",
+        4: "Unsliced Sans SC Regular", 6: "UnslicedSansSC-Regular",
+        16: "Unsliced Sans SC", 17: "Regular",
     }
     name_table = font["name"]
     for record in list(name_table.names):
