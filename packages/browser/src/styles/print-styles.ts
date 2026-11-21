@@ -60,9 +60,8 @@ export function generatePrintStyles(pageConfig: ResolvedPageConfig): string {
   margin-block-start: 0 !important;
 }
 
-.breakflow-table-slice {
-  width: 100%;
-  border-collapse: collapse;
+.breakflow-table-slice tr {
+  break-inside: avoid;
 }
 
 /* Screen Preview / Presentation Mode */

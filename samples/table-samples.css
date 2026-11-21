@@ -1,0 +1,13 @@
+* { box-sizing: border-box; }
+body { margin: 0; color: #1e3034; font: 16px/22px sans-serif; }
+main { padding: 0; }
+.brief { border-top: 5px solid #216a65; padding: 26px 32px; background: #f1f6f5; }
+.brief h1 { font-size: 30px; line-height: 40px; margin: 8px 0 18px; }
+.brief p { max-width: 32em; }
+.brief dl { display: grid; grid-template-columns: 7em 1fr; gap: 12px; margin-top: 32px; }
+.brief dd { margin: 0; }
+h2, p.intro { margin: 0; padding: 12px 0; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 9px 12px; text-align: left; border-bottom: 1px solid #c4d3d3; }
+th { color: white; background: #205956; }
+tbody tr:nth-child(even) { background: #f4f8f7; }

@@ -14,6 +14,15 @@ export function buildLayoutTree(
   const containerRect = rootElement.getBoundingClientRect();
   const visibleChildren = (Array.from(rootElement.children) as HTMLElement[]).filter((el) => isElementVisible(el));
   nodeCounter = 0;
+  rootElement.querySelectorAll('table').forEach((table, index) => {
+    table.dataset.breakflowTableIndex = String(index);
+    const body = table.tBodies[0];
+    if (!table.tHead && body) {
+      while (body.rows[0]?.cells.length && Array.from(body.rows[0].cells).every(cell => cell.tagName === 'TH')) {
+        table.createTHead().append(body.rows[0]);
+      }
+    }
+  });
 
   return visibleChildren.map((el, index) => {
     const nextSibling = visibleChildren[index + 1];
@@ -191,6 +200,10 @@ function buildNode(
   const type = determineNodeType(tagName);
   const rules = extractNodeRules(el, type, tagName, config);
 
+  if (nextSibling?.tagName === 'TABLE' && (type === 'paragraph' || /[:：]$/u.test(el.innerText.trim()))) {
+    rules.keepWithNext = true;
+  }
+
   const rect = el.getBoundingClientRect();
   const computed = window.getComputedStyle(el);
   const marginBottom = parseFloat(computed.marginBottom) || 0;
@@ -217,14 +230,42 @@ function buildNode(
 
   const children: LayoutNode[] = [];
 
+  let tableLayout: LayoutNode['tableLayout'];
   // If table, recursively inspect thead and rows
   if (type === 'table') {
+    const table = el as HTMLTableElement;
+    const bodies = Array.from(table.tBodies).filter(isElementVisible);
+    const rows = bodies.flatMap(body => Array.from(body.rows).filter(isElementVisible));
+    const blockedCuts = new Set<number>();
+    let offset = 0;
+    for (const body of bodies) {
+      const visibleRows = Array.from(body.rows).filter(isElementVisible);
+      for (const [i, row] of visibleRows.entries()) {
+        row.dataset.breakflowRowIndex = String(offset + i);
+        for (const cell of Array.from(row.cells)) {
+          const end = Math.min(visibleRows.length, cell.rowSpan ? i + cell.rowSpan : visibleRows.length);
+          for (let j = i + 1; j < end; j++) blockedCuts.add(offset + j);
+        }
+      }
+      offset += visibleRows.length;
+    }
+    const first = rows[0]?.getBoundingClientRect();
+    const last = rows.at(-1)?.getBoundingClientRect();
+    if (first && last) {
+      const caption = table.caption?.getBoundingClientRect();
+      tableLayout = {
+        blockedCuts: [...blockedCuts],
+        continuationTop: Math.max(0, first.top - rect.top - (caption && caption.bottom <= first.top ? caption.height : 0)),
+        fragmentBottom: Math.max(0, rect.bottom - last.bottom - (table.tFoot?.getBoundingClientRect().height ?? 0)
+          - (caption && caption.top >= last.bottom ? caption.height : 0))
+      };
+    }
     const tableParts = (Array.from(el.children) as HTMLElement[]).filter((part) => isElementVisible(part));
     for (let p = 0; p < tableParts.length; p++) {
       children.push(buildNode(tableParts[p]!, containerRect, config, tableParts[p + 1]));
     }
   } else if (type === 'table-head' || type === 'table-body') {
-    const rows = (Array.from(el.querySelectorAll('tr')) as HTMLElement[]).filter((row) => isElementVisible(row));
+    const rows = (Array.from(el.children).filter(child => child.tagName === 'TR') as HTMLElement[]).filter((row) => isElementVisible(row));
     for (let r = 0; r < rows.length; r++) {
       children.push(buildNode(rows[r]!, containerRect, config, rows[r + 1]));
     }
@@ -245,6 +286,7 @@ function buildNode(
     breakable: !rules.keepTogether || children.length > 0,
     rules,
     children,
+    ...(tableLayout ? { tableLayout } : {}),
     domRefId: id
   };
 }

@@ -65,8 +65,8 @@ export class BrowserPaginator {
 
   constructor({ strategy, ...config }: BrowserPaginatorConfig = {}) {
     this.config = resolveConfig(config);
-    this.strategy = strategy === 'optimal' ? new OptimalStrategy(config.optimal) :
-      typeof strategy === 'object' ? strategy : new GreedyScoredStrategy();
+    this.strategy = strategy === 'greedy-scored' ? new GreedyScoredStrategy() :
+      typeof strategy === 'object' ? strategy : new OptimalStrategy(config.optimal);
   }
 
   private resolveTargetElement(target: string | HTMLElement): HTMLElement {

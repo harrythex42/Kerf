@@ -22,7 +22,7 @@ export interface GeneratePdfOptions {
 
   /** BreakFlow pagination configuration */
   config?: BreakFlowConfig;
-  /** Defaults to the original greedy strategy. */
+  /** Defaults to global optimal pagination. */
   strategy?: BrowserStrategyOption;
 
   /** Page configuration shortcut */

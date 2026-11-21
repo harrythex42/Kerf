@@ -47,7 +47,7 @@ export function constructPaginatedDOM(
 
       if (item.tableSplit?.isSplit) {
         // Construct table slice
-        const tableSlice = createTableSlice(sourceEl, item.tableSplit, doc);
+        const tableSlice = createTableSlice(sourceEl as HTMLTableElement, item.tableSplit, doc);
         contentTarget.appendChild(tableSlice);
       } else {
         const clonedNode = sourceEl.cloneNode(true) as HTMLElement;
@@ -63,48 +63,52 @@ export function constructPaginatedDOM(
 }
 
 function createTableSlice(
-  originalTable: HTMLElement,
+  originalTable: HTMLTableElement,
   tableSplit: { startRowIndex: number; endRowIndex: number; repeatsHeader: boolean },
   doc: Document
 ): HTMLElement {
-  const tableClone = originalTable.cloneNode(false) as HTMLElement;
+  const tableClone = originalTable.cloneNode(false) as HTMLTableElement;
   tableClone.classList.add('breakflow-table-slice');
-  tableClone.style.tableLayout = 'fixed';
+  const { startRowIndex, endRowIndex } = tableSplit;
+  const bodies = Array.from(originalTable.tBodies);
+  const dataRows = bodies.flatMap(body => Array.from(body.rows)).filter(row => row.hasAttribute('data-breakflow-row-index'));
+  const final = endRowIndex + 1 === dataRows.length;
+  tableClone.style.width = originalTable.getBoundingClientRect().width + 'px';
+  tableClone.style.maxWidth = '100%';
+  if (!final) tableClone.style.marginBlockEnd = '0';
+  if (originalTable.caption && ((getComputedStyle(originalTable.caption).captionSide === 'bottom') ? final : startRowIndex === 0)) {
+    tableClone.append(originalTable.caption.cloneNode(true));
+  }
 
-  // 1. Capture and preserve column widths from original table headers or first row cells
-  const colgroup = doc.createElement('colgroup');
-  const sampleRow = originalTable.querySelector('tr');
-  if (sampleRow) {
-    const cells = Array.from(sampleRow.children) as HTMLElement[];
-    for (const cell of cells) {
+  // Freeze the measured column tracks so multiline cells wrap as in the source.
+  const rows = Array.from(originalTable.rows);
+  const columnCount = rows.reduce((n, row) => Math.max(n, Array.from(row.cells).reduce((k, c) => k + c.colSpan, 0)), 0);
+  const full = rows.find(row => row.cells.length === columnCount);
+  if (full) {
+    tableClone.style.tableLayout = 'fixed';
+    const cols = doc.createElement('colgroup');
+    const total = Array.from(full.cells).reduce((sum, cell) => sum + cell.getBoundingClientRect().width, 0);
+    for (const cell of Array.from(full.cells)) {
       const col = doc.createElement('col');
-      const width = cell.getBoundingClientRect().width;
-      if (width > 0) {
-        col.style.width = `${Math.round(width)}px`;
-      }
-      colgroup.appendChild(col);
+      col.style.width = 100 * cell.getBoundingClientRect().width / total + '%';
+      cols.append(col);
     }
-    tableClone.appendChild(colgroup);
+    tableClone.append(cols);
+  } else {
+    for (const cols of originalTable.querySelectorAll(':scope > colgroup')) tableClone.append(cols.cloneNode(true));
   }
 
-  // 2. Repeat <thead> if configured
-  const thead = originalTable.querySelector('thead');
-  if (thead && (tableSplit.repeatsHeader || tableSplit.startRowIndex === 0)) {
-    tableClone.appendChild(thead.cloneNode(true));
+  if (originalTable.tHead && (startRowIndex === 0 || tableSplit.repeatsHeader)) {
+    tableClone.append(originalTable.tHead.cloneNode(true));
   }
-
-  // 3. Slice <tbody> rows
-  const allRows = Array.from(originalTable.querySelectorAll('tbody tr, table > tr')) as HTMLElement[];
-  // If no tbody was present and rows were direct children or in tbody
-  const tbody = doc.createElement('tbody');
-
-  for (let i = tableSplit.startRowIndex; i <= tableSplit.endRowIndex && i < allRows.length; i++) {
-    const row = allRows[i];
-    if (row) {
-      tbody.appendChild(row.cloneNode(true));
+  for (const body of bodies) {
+    const copy = body.cloneNode(false) as HTMLTableSectionElement;
+    for (const row of Array.from(body.rows)) {
+      const index = row.dataset.breakflowRowIndex;
+      if (index !== undefined && +index >= startRowIndex && +index <= endRowIndex) copy.append(row.cloneNode(true));
     }
+    if (copy.rows.length) tableClone.append(copy);
   }
-
-  tableClone.appendChild(tbody);
+  if (final && originalTable.tFoot) tableClone.append(originalTable.tFoot.cloneNode(true));
   return tableClone;
 }

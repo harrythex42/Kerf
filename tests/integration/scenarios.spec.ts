@@ -264,3 +264,15 @@ test('The page limit rejects the PDF before it can be written', async ({ page })
     playwrightPage: page,
   })).rejects.toThrow('exceeded the maximum page count (1)');
 });
+
+test('the default analysis and print path choose the row-aware optimum', async ({ page }) => {
+  const html = '<main><div style="height:600px">Summary</div><h2>Transactions</h2><p>Listed below:</p>' +
+    '<table><thead><tr><th>Item</th></tr></thead><tbody>' +
+    Array.from({ length: 14 }, (_, i) => '<tr style="height:44px"><td>Record ' + i + '</td></tr>').join('') + '</tbody></table></main>';
+  const options = { html, selector: 'main', playwrightPage: page, config: { optimal: { tableSplitLines: 0 } } };
+  const implicit = await generatePdf(options);
+  expect(implicit.result.pages).toEqual((await analyzePdf({ ...options, strategy: 'optimal' })).pages);
+  expect(implicit.result.pages[0]?.items.map(i => i.tagName)).toEqual(['div', 'h2', 'p', 'table']);
+  expect(implicit.result.pages[1]?.items[0]?.tableSplit?.repeatsHeader).toBe(true);
+  expect((await analyzePdf({ ...options, strategy: 'greedy-scored' })).pages[0]?.items.some(i => i.tagName === 'table')).toBe(false);
+});

@@ -38,8 +38,16 @@ export async function createIsolatedSandbox(
 
   // Copy stylesheets and style tags from parent document
   const styleNodes = Array.from(parentDoc.querySelectorAll('style, link[rel="stylesheet"]'));
+  const stylesReady: Promise<void>[] = [];
   for (const node of styleNodes) {
-    iframeDoc.head.appendChild(node.cloneNode(true));
+    const clone = node.cloneNode(true) as HTMLElement;
+    if (clone.tagName === 'LINK') {
+      stylesReady.push(new Promise<void>((done, fail) => {
+        clone.addEventListener('load', () => done(), { once: true });
+        clone.addEventListener('error', () => fail(new Error('Could not load print stylesheet: ' + clone.getAttribute('href'))), { once: true });
+      }));
+    }
+    iframeDoc.head.appendChild(clone);
   }
 
   // Inject BreakFlow normalization styles
@@ -68,7 +76,15 @@ export async function createIsolatedSandbox(
   wrapRootText(clonedTarget);
 
   // Wait for fonts and images in the sandbox document to settle
-  await waitForAssets(iframeDoc);
+  try {
+    await Promise.all(stylesReady);
+    // Trigger font discovery after styles are applied, before awaiting document.fonts.ready.
+    clonedTarget.getBoundingClientRect();
+    await waitForAssets(iframeDoc);
+  } catch (error) {
+    iframe.remove();
+    throw error;
+  }
 
   const cleanup = () => {
     try {

@@ -3,6 +3,7 @@ export type PaginationIssueType =
   | 'widow'
   | 'split-element'
   | 'split-table-row'
+  | 'short-table-fragment'
   | 'oversized-element'
   | 'blank-page'
   | 'overflow'

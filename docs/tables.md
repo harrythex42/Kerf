@@ -1,5 +1,7 @@
 # Table Pagination & Multi-Page Geometry
 
+Kerf uses [global optimal row pagination](optimal-pagination.md#tables) by default. The following describes the optional upstream greedy planner.
+
 ## The Table Pagination Problem
 
 HTML tables present unique difficulties during pagination:

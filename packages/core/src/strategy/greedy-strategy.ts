@@ -221,7 +221,13 @@ export class GreedyScoredStrategy implements PaginationStrategy {
         // Check keepWithNext (orphan heading check):
         // If node needs next element, does the next element also fit, or will this be left alone?
         if (needsNext && nextNode && currentPageItems.length > 0) {
-          const nextHeight = nextNode.bounds.height;
+          let nextHeight = nextNode.bounds.height;
+          // Look through a heading and its introduction when both lead to a table.
+          let chainHeight = nextHeight;
+          for (let j = i + 1; nodes[j]?.rules.keepWithNext && nodes[j + 1]; j++) {
+            chainHeight += nodes[j + 1]!.bounds.height;
+            if (nodes[j + 1]!.type === 'table') { nextHeight = chainHeight; break; }
+          }
           const roomForBoth = currentHeight + nodeHeight + nextHeight <= pageContentHeight;
           const nextCanFitOnFreshPage = nextHeight <= pageContentHeight;
 

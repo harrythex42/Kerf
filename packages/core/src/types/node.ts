@@ -66,6 +66,9 @@ export interface LayoutNode {
   /** Internal reference ID or metadata for mapping back to DOM without coupling */
   domRefId?: string;
 
+  /** Row boundaries crossed by a rowspan cannot be used as page breaks. */
+  tableLayout?: { blockedCuts: number[]; continuationTop: number; fragmentBottom: number };
+
   /** Arbitrary metadata (e.g. table cell counts, row indices) */
   metadata?: Record<string, unknown>;
 }

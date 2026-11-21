@@ -2,7 +2,7 @@
 
 Kerf builds on [BreakFlow](https://github.com/mehmetduran932/BreakFlow)
 to generate paginated, searchable PDFs from documents. The packages keep their
-upstream `@breakflow/*` names. The original greedy strategy is the default. Set `strategy: "optimal"` for dynamic programming. See [pagination costs and validation](docs/optimal-pagination.md).
+upstream `@breakflow/*` names. Global optimal pagination is the default. Select `strategy: 'greedy-scored'` for the original greedy planner. See [pagination costs and validation](docs/optimal-pagination.md).
 
 ## Kerf acceptance checks
 
@@ -20,6 +20,9 @@ lower casing, duplicated text and visually similar characters are reported as
 differences. The report lists whitespace on the final page separately.
 For a new sample, mark its printable container with `data-kerf-root` if the
 entire page or its single top-level `main` or `article` is unsuitable.
+The [comparison gallery](docs/comparison/) includes every sample and the invoice
+at four table-break penalties. To refresh the gallery, run `pnpm acceptance --sweep`
+and then `python3 scripts/comparison_images.py` with Pillow installed.
 The former 500-block limit sample must print all 501 blocks. Run `pnpm test` for the unit and Chromium test suites
 after building the packages.
 
@@ -32,7 +35,7 @@ The browser entry point accepts `createPaginator({ strategy })`, where
 `strategy` is an implementation of `PaginationStrategy`. Playwright accepts
 `strategy: { script, globalName }` in both `generatePdf` and `analyzePdf`.
 The JavaScript must be trusted and expose the strategy as `window[globalName]`.
-Use `strategy: 'greedy-scored'` to select the built-in strategy explicitly.
+Use `strategy: 'greedy-scored'` to select greedy pagination explicitly.
 
 ## Upstream BreakFlow documentation
 

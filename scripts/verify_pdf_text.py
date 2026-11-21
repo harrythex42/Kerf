@@ -63,9 +63,20 @@ def compare(sections, pages):
 
 
 if __name__ == "__main__":
-    sections = json.load(sys.stdin)
+    reference = json.load(sys.stdin)
+    sections = reference["sections"]
+    headers = reference["headers"]
     reader = PdfReader(Path(sys.argv[1]))
     pages = [page.extract_text() for page in reader.pages]
+    # Verify exactly one known source header at the start of each continuation.
+    # Removing arbitrary matching substrings would hide extra or missing text.
+    errors = []
+    for number, header in headers.items():
+        index = int(number) - 1
+        if index >= len(pages) or not compact(pages[index]).startswith(header):
+            errors.append(f"PDF 第 {number} 页缺少原表的续页表头")
+        else:
+            pages[index] = compact(pages[index])[len(header):]
     embedded_fonts = set()
     for page in reader.pages:
         resources = page["/Resources"].get_object()
@@ -78,6 +89,6 @@ if __name__ == "__main__":
                     embedded_fonts.add(str(face["/BaseFont"]))
     print(json.dumps({
         "pages": len(pages),
-        "differences": compare(sections, pages),
+        "differences": errors + compare(sections, pages),
         "embeddedFonts": sorted(embedded_fonts)
     }, ensure_ascii=False))
