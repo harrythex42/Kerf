@@ -15,11 +15,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       KERF_PYTHON: python
-      PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/kerf-first-chromium
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+
+    - name: Set a new browser cache for this job
+      shell: bash
+      run: echo "PLAYWRIGHT_BROWSERS_PATH=$RUNNER_TEMP/kerf-first-chromium" >> "$GITHUB_ENV"
 
     - name: Install pnpm
       uses: pnpm/action-setup@v4

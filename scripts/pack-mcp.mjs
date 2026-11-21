@@ -14,11 +14,12 @@ const destination = resolve(output);
 const staging = await mkdtemp(join(tmpdir(), 'kerf-npm-'));
 try {
   const { version, dependencies } = JSON.parse(await readFile(join(project, 'packages/mcp/package.json'), 'utf8'));
-  const { '@breakflow/playwright': workspaceAdapter, ...runtime } = dependencies;
-  // Keep the Playwright driver external. Pin its version so the browser build
-  // used by a packed release stays the same as the one tested in this workspace.
-  const playwright = JSON.parse(await readFile(join(project, 'packages/mcp/node_modules/playwright/package.json'), 'utf8'));
-  runtime.playwright = playwright.version;
+  const runtime = {};
+  for (const dependency of Object.keys(dependencies).filter(name => !name.startsWith('@breakflow/'))) {
+    const manifest = JSON.parse(await readFile(join(project, 'packages/mcp/node_modules', dependency, 'package.json'), 'utf8'));
+    // Pin the workspace-tested versions, particularly the Playwright driver and its browser revision.
+    runtime[dependency] = manifest.version;
+  }
   await writeFile(join(staging, 'package.json'), JSON.stringify({
     name, version, description: 'Kerf MCP server for searchable, optimally paginated PDFs',
     type: 'module', bin: { [name.split('/').at(-1)]: './dist/server.mjs' },

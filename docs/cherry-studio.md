@@ -36,7 +36,9 @@ Markdown 支持标题、列表、表格、代码块、引用和图片。图片�
 
 ## npm 安装方式（包名确定并发布后）
 
-在 Windows 上先装 [Node.js](https://nodejs.org/zh-cn/download)，然后重启 Cherry Studio，让应用找到 npm。在 **设置 → MCP → 添加 → 快速创建** 中选择 **STDIO**。命令填写 `npx`（找不到时填 `npx.cmd`），参数分别填 `-y` 和发布后的包名。macOS 和 Linux 使用相同填法。不需要从 GitHub 下载项目。包名确认前，上面的源码配置可继续使用。
+在 Windows 上先装 [Node.js](https://nodejs.org/zh-cn/download)，然后重启 Cherry Studio，让应用找到 npm。在 **设置 → MCP → 添加 → 快速创建** 中选择 **STDIO**。命令填写 `npx`（找不到时，见下方 Windows 备用填法），参数分别填 `-y` 和发布后的包名。macOS 和 Linux 使用相同填法。不需要从 GitHub 下载项目。包名确认前，上面的源码配置可继续使用。
+
+Windows 备用填法用 `cmd.exe` 作命令，依次填 `/d`、`/c`、`npx`、`-y`、包名，每行一个。这个方法由 Windows 的命令解释器启动 Node.js 自带的 `npx.cmd`。
 
 ## 国内网络与自定义镜像
 
