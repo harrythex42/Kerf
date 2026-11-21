@@ -73,7 +73,11 @@ async function withPreparedPage<T>(
     await page.emulateMedia({ media: 'print' });
     const bodyFont = await page.evaluate(selector => {
       const root = document.querySelector<HTMLElement>(selector);
-      return root && /\p{Script=Han}/u.test(root.innerText) ? getComputedStyle(root).fontFamily : null;
+      if (!root || !/\p{Script=Han}/u.test(root.innerText)) return null;
+      root.setAttribute('data-breakflow-cjk-root', '');
+      const font = getComputedStyle(root).fontFamily;
+      root.style.setProperty('font-family', '"Kerf Sans SC", ' + font, 'important');
+      return font;
     }, options.selector ?? 'body');
     if (bodyFont) {
       await page.route(FONT_URL, serveBundledFont);
@@ -86,7 +90,7 @@ async function withPreparedPage<T>(
           unicode-range: U+2E80-2FFF, U+3000-303F, U+31C0-31EF, U+3400-4DBF,
             U+4E00-9FFF, U+F900-FAFF, U+FE30-FE4F, U+FF00-FFEF, U+20000-323AF;
         }
-        body, :is(${options.selector ?? 'body'}) { font-family: "Kerf Sans SC", ${bodyFont} !important; }
+        body, [data-breakflow-cjk-root] { font-family: "Kerf Sans SC", ${bodyFont} !important; }
       ` });
       await page.evaluate(async () => {
         const faces = await document.fonts.load('400 16px "Kerf Sans SC"', '中');
@@ -154,6 +158,7 @@ export async function generatePdf(options: GeneratePdfOptions): Promise<PdfResul
     const pdfBuffer = await page.pdf({
       path: output,
       format: resolved.page.format ?? 'A4',
+      preferCSSPageSize: true,
       printBackground: true,
       margin: { top: '0px', bottom: '0px', left: '0px', right: '0px' }
     });

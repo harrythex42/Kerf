@@ -4,6 +4,10 @@ Kerf builds on [BreakFlow](https://github.com/mehmetduran932/BreakFlow)
 to generate paginated, searchable PDFs from documents. The packages keep their
 upstream `@breakflow/*` names. Global optimal pagination is the default. Select `strategy: 'greedy-scored'` for the original greedy planner. See [pagination costs and validation](docs/optimal-pagination.md).
 
+## Use Kerf with an AI client
+
+Kerf exposes the `create_pdf` tool over MCP. See the [Cherry Studio 安装与使用说明](docs/cherry-studio.md).
+
 ## Kerf acceptance checks
 
 Install the workspace dependencies with `pnpm install --frozen-lockfile` and

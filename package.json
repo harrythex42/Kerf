@@ -9,6 +9,7 @@
     "test:unit": "vitest run",
     "test:browser": "playwright test",
     "acceptance": "turbo run build && node scripts/acceptance.mjs",
+    "test:mcp": "node packages/mcp/acceptance.mjs",
     "typecheck": "turbo run typecheck",
     "lint": "eslint packages/**/src --ext .ts",
     "clean": "turbo run clean"
