@@ -56,6 +56,10 @@ export function generatePrintStyles(pageConfig: ResolvedPageConfig): string {
   overflow: hidden;
 }
 
+.breakflow-page:not(:first-child) [data-breakflow-page-root] > :first-child {
+  margin-block-start: 0 !important;
+}
+
 .breakflow-table-slice {
   width: 100%;
   border-collapse: collapse;

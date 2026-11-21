@@ -106,11 +106,13 @@ async function boxOverflow(page) {
     const top = box.top + Number.parseFloat(style.paddingTop);
     const left = box.left + Number.parseFloat(style.paddingLeft);
     const right = box.right - Number.parseFloat(style.paddingRight);
-    return Array.from(content.querySelectorAll('*')).filter(node => {
-      const nodeBox = node.getBoundingClientRect();
-      return nodeBox.height > 0 && (nodeBox.bottom > bottom + 0.05 || nodeBox.top < top - 0.05 ||
-        nodeBox.left < left - 0.05 || nodeBox.right > right + 0.05);
-    }).map(node => `第 ${index + 1} 页的 ${node.id ? '#' + node.id : node.tagName.toLowerCase()} 超出可排版范围`);
+    return Array.from(content.querySelectorAll('*')).flatMap(node => {
+      const rect = node.getBoundingClientRect();
+      if (!rect.height) return [];
+      const overshoot = { 下: rect.bottom - bottom, 上: top - rect.top, 左: left - rect.left, 右: rect.right - right };
+      return Object.entries(overshoot).filter(([, px]) => px > 0.05).map(([edge, px]) =>
+        `第 ${index + 1} 页的 ${node.id ? '#' + node.id : node.tagName.toLowerCase()} 超出${edge}边界 ${px.toFixed(2)}px`);
+    });
   }));
 }
 

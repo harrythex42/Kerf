@@ -38,6 +38,9 @@ export function constructPaginatedDOM(
       contentEl.appendChild(contentTarget);
     }
 
+    // A continuation starts at the printable edge. The measured gap before
+    // its first block belonged to the preceding page's last block.
+    contentTarget.setAttribute('data-breakflow-page-root', '');
     for (const item of pageInfo.items) {
       const sourceEl = sandboxRoot.querySelector(`[data-breakflow-node-id="${item.nodeId}"]`) as HTMLElement | null;
       if (!sourceEl) continue;
