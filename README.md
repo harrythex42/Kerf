@@ -60,7 +60,7 @@ In this jsPDF fixed-slice export, the pages are images, so the text cannot be se
 
 Unsliced is based on BreakFlow and retains its MIT license and copyright notice. The bundled Unsliced Sans SC font is based on Noto Sans SC and is licensed under SIL Open Font License 1.1. [BreakFlow](https://github.com/mehmetduran932/BreakFlow) · [MIT license](LICENSE) · [Font license](packages/playwright/assets/fonts/OFL.txt)
 
-Unsliced builds on a long line of [research into global line breaking and pagination](docs/optimal-pagination.md#related-work).
+Unsliced’s approach belongs to the family of globally optimized pagination methods and draws on the work of Donald Knuth and Michael Plass ([global line breaking, 1981](docs/optimal-pagination.md#related-work)); Michael Plass ([doctoral dissertation on optimal pagination, 1981](docs/optimal-pagination.md#related-work)); Frank Mittelbach ([global pagination framework, 2016](docs/optimal-pagination.md#related-work)); and Brüggemann-Klein et al. ([pagination of complex documents, 2003](docs/optimal-pagination.md#related-work)).
 
 Install dependencies with `pnpm install --frozen-lockfile` and `python -m pip install -r scripts/requirements.txt`. Use `UNSLICED_PYTHON` to select a Python environment if needed. Run `pnpm exec playwright install chromium`, `pnpm test`, `pnpm test:mcp`, and `pnpm acceptance`.
 
@@ -122,6 +122,6 @@ npx -y unsliced-pdf-mcp
 
 Unsliced 基于 BreakFlow，保留其 MIT 许可证和版权声明。随包分发的 Unsliced Sans SC 源自 Noto Sans SC，采用 SIL Open Font License 1.1。[BreakFlow](https://github.com/mehmetduran932/BreakFlow) · [MIT 许可证](LICENSE) · [字体许可证](packages/playwright/assets/fonts/OFL.txt)
 
-Unsliced 延续了[全局断行和分页的研究](docs/optimal-pagination.md#related-work)。
+Unsliced 的分页方法属于「全局最优分页」这一类，受益于 Donald Knuth 与 Michael Plass 的[全局断行算法（1981）](docs/optimal-pagination.md#related-work)、Michael Plass 的[最优分页博士论文（1981）](docs/optimal-pagination.md#related-work)、Frank Mittelbach 的[全局分页框架（2016）](docs/optimal-pagination.md#related-work)，以及 Brüggemann-Klein 等人对[复杂文档分页的研究（2003）](docs/optimal-pagination.md#related-work)。
 
 使用 `pnpm install --frozen-lockfile` 和 `python -m pip install -r scripts/requirements.txt` 安装依赖。需要时用 `UNSLICED_PYTHON` 指定 Python 环境。运行 `pnpm exec playwright install chromium`、`pnpm test`、`pnpm test:mcp` 和 `pnpm acceptance`。
