@@ -16,8 +16,15 @@ export interface OptimalOptions {
   breakPenalty?: (left: LayoutNode, right: LayoutNode) => number;
 }
 
+export const DEFAULT_OPTIMAL_OPTIONS = Object.freeze({
+  freeLines: 2, growth: 1.18, cap: 1e6, fixedLines: 15, tableSplitLines: 15,
+  reservePx: 4, minTableRows: 2, keepHeadings: true
+});
+
 export function pageCostModel(options: OptimalOptions = {}) {
-  const { freeLines = 2, growth = 1.18, cap = 1e6, fixedLines = 15, reservePx = 4 } = options;
+  const defaults = DEFAULT_OPTIMAL_OPTIONS;
+  const { freeLines = defaults.freeLines, growth = defaults.growth, cap = defaults.cap,
+    fixedLines = defaults.fixedLines, reservePx = defaults.reservePx } = options;
   if (![freeLines, cap, fixedLines, reservePx].every(x => Number.isFinite(x) && x >= 0) ||
       !Number.isFinite(growth) || growth <= 1) throw new PaginationError('Invalid pagination costs.');
   const logGrowth = Math.log(growth);
@@ -25,7 +32,7 @@ export function pageCostModel(options: OptimalOptions = {}) {
   const whitespace = options.whitespaceCost ?? ((lines: number) =>
     Math.min(cap, Math.expm1(Math.min(maximum, Math.max(0, lines - freeLines) * logGrowth))));
   const fixed = whitespace(fixedLines);
-  const splitLines = options.tableSplitLines ?? 15;
+  const splitLines = options.tableSplitLines ?? defaults.tableSplitLines;
   const splitCost = whitespace(splitLines);
   if (!Number.isFinite(splitLines) || splitLines < 0 || !Number.isFinite(splitCost) || splitCost < 0)
     throw new PaginationError('Invalid table split cost.');
@@ -101,7 +108,8 @@ export class OptimalStrategy implements PaginationStrategy {
       throw new PaginationError('Optimal pagination requires a measured body line height.');
     const model = pageCostModel(this.options);
     const capacity = height - model.reservePx;
-    const min = this.options.minTableRows ?? 2;
+    const min = this.options.minTableRows ?? DEFAULT_OPTIMAL_OPTIONS.minTableRows;
+    const keepHeadings = this.options.keepHeadings ?? DEFAULT_OPTIMAL_OPTIONS.keepHeadings;
     if (!(capacity > 0) || !Number.isSafeInteger(min) || min < 1) throw new PaginationError('Invalid page capacity or minimum table rows.');
     const plan: PaginationPlan = { pages: [], fixes: [], issues: [] };
     const units: Unit[] = [];
@@ -141,7 +149,7 @@ export class OptimalStrategy implements PaginationStrategy {
         penalties[i] = this.options.breakPenalty?.(left, right.node) ?? 0;
         if (Number.isNaN(penalties[i]) || penalties[i]! < 0) throw new PaginationError('Invalid break penalty.');
         if (right.node.type === 'table' && (left.type === 'heading' || left.rules.keepWithNext)) penalties[i] = Infinity;
-        protectedBreak[i] = Number(left.type === 'heading' ? this.options.keepHeadings !== false : left.rules.keepWithNext);
+        protectedBreak[i] = Number(left.type === 'heading' ? keepHeadings !== false : left.rules.keepWithNext);
       }
     }
     costs[0] = short[0] = violations[0] = 0;

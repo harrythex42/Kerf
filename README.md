@@ -24,6 +24,8 @@ npm 包 `unsliced-pdf-mcp` 待发布。发布后，安装 Node.js 22 或更新�
 
 现在可从源码使用。macOS 和 Linux 的命令栏填启动脚本 `scripts/unsliced-mcp` 的完整路径。Windows 的配置和浏览器镜像设置见安装说明。[中文安装说明](docs/cherry-studio.md)
 
+默认不保存原稿。需要时，在 MCP 环境变量中设置 `UNSLICED_KEEP_SOURCE=1`，原稿和生成记录会保存在 PDF 输出目录的 `sources/` 子文件夹。
+
 想参与分页偏好评审，可使用本地盲评页面。[分页评审台说明](docs/pagination-review.md)
 
 ### 致谢
@@ -47,6 +49,8 @@ Imagine lining up headings, paragraphs, figures and table rows. Unsliced evaluat
 The `unsliced-pdf-mcp` npm package is awaiting publication. After publication, install Node.js 22 or later and add a STDIO server in **Settings → MCP → Add → Quick Create**. The launch command will be `npx -y unsliced-pdf-mcp`. Enter `npx` as the command and the other two values as separate arguments.
 
 For the source build, use the absolute path to `scripts/unsliced-mcp` on macOS or Linux. The setup guide also covers Windows and browser downloads. [Setup guide](docs/cherry-studio.md)
+
+Source archiving is off by default. Set `UNSLICED_KEEP_SOURCE=1` in the MCP environment to save the original and its generation record under `sources/` in the PDF output directory.
 
 ### Credits and development
 

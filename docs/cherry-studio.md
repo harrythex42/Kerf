@@ -28,6 +28,8 @@ Unsliced 把 Markdown 或 HTML 排成可搜索、能复制文字的 PDF。默认
 
 文件默认保存到你的 **文稿 → Unsliced** 文件夹。同名文件会自动加数字后缀。想更换目录，可以在 MCP 环境变量中填写 `UNSLICED_OUTPUT_DIR`。返回的路径可以在 Finder 中用 **前往 → 前往文件夹** 打开。
 
+默认不保存原稿；在 MCP 环境变量中设置 `UNSLICED_KEEP_SOURCE=1` 后重启服务，PDF 输出目录里的 `sources/` 会保存同名的原稿（`.md` 或 `.html`）和生成记录（`.json`）。归档内容未经删改，可能含私密信息；请只在合适的本地目录开启，不要在浏览器里打开不可信的 HTML 原稿。
+
 ## 浏览器与排查
 
 Unsliced 优先使用电脑现有的 Google Chrome 或 Microsoft Edge。首次调用时如果没有可用浏览器，会下载 Playwright 的 Chromium。详细下载进度和错误会写到 MCP 服务日志。支持 MCP 进度通知的客户端也会看到下载提示。下载超时或失败时可以检查网络，或安装 Chrome 后重新调用。Linux 如提示缺少系统库，可在项目目录运行 `npx --yes pnpm@12.3.4 exec playwright install-deps chromium`。
