@@ -11,6 +11,8 @@ import { analyzePdf, generatePdf } from '../../packages/playwright/dist/index.js
 import { boxOverflow, sourceSections } from '../../packages/mcp/page-checks.mjs';
 import { captureTables, inspectTables } from '../check-table-fragments.mjs';
 import { digest, prepareDocuments } from './documents.mjs';
+import { planPilotV2, seedV2 } from './pilot-v2.mjs';
+import { baseline, nearbyProfiles } from './profiles.mjs';
 
 const project = fileURLToPath(new URL('../../', import.meta.url));
 const root = join(project, 'output', 'review');
@@ -18,34 +20,40 @@ const datasetId = randomUUID();
 const directory = join(root, 'datasets', datasetId);
 const archive = join(directory, 'sources');
 const python = process.env.UNSLICED_PYTHON || 'python3';
+const nearby = process.argv.includes('--near-default');
 process.env.PYTHONUTF8 = '1';
 execFileSync(python, ['-c', 'import pymupdf, pypdf']);
 
-const baseline = { freeLines: 2, growth: 1.18, cap: 1e6, fixedLines: 15,
-  tableSplitLines: 15, reservePx: 4, minTableRows: 2, keepHeadings: true };
-const profiles = [baseline];
-for (const tableSplitLines of [28, 0, 42, 8, 20]) {
-  for (const [freeLines, growth, fixedLines] of [
-    [2, 1.18, 15], [0, 1.08, 0], [6, 1.12, 13], [14, 1.06, 21],
-    [1, 1.25, 29], [2, 1.18, 40], [0, 1.2, 4], [28, 1.1, 38],
-    [44, 1.08, 0], [0, 1.045, 80], [0, 1.28, 0], [9, 1.15, 6]
-  ]) profiles.push({ ...baseline, tableSplitLines, freeLines, growth, fixedLines });
+const profiles = nearby ? nearbyProfiles : [baseline];
+if (!nearby) {
+  for (const tableSplitLines of [28, 0, 42, 8, 20]) {
+    for (const [freeLines, growth, fixedLines] of [
+      [2, 1.18, 15], [0, 1.08, 0], [6, 1.12, 13], [14, 1.06, 21],
+      [1, 1.25, 29], [2, 1.18, 40], [0, 1.2, 4], [28, 1.1, 38],
+      [44, 1.08, 0], [0, 1.045, 80], [0, 1.28, 0], [9, 1.15, 6]
+    ]) profiles.push({ ...baseline, tableSplitLines, freeLines, growth, fixedLines });
+  }
 }
 
 const probe = {
   globalName: 'reviewProbe',
   script: `window.reviewProbe = { name: 'review-probe', paginate(input) {
-    const results = [], seen = new Set();
+    const results = [], seen = new Map();
     let representative;
     for (const options of ${JSON.stringify(profiles)}) {
       try {
         const plan = new BreakFlow.OptimalStrategy(options).paginate(input);
         if (!plan.pages.length || plan.issues.some(issue => issue.severity === 'error')) continue;
         const signature = JSON.stringify(plan.pages.map(page => page.items.map(item => [item.nodeId, item.tableSplit])));
-        if (seen.has(signature)) continue;
-        seen.add(signature);
+        const existing = seen.get(signature);
+        if (existing) {
+          if (${nearby}) existing.equivalentOptions.push(options);
+          continue;
+        }
         representative ??= plan;
-        results.push({ options, signature });
+        const candidate = { options, signature, equivalentOptions: [options] };
+        seen.set(signature, candidate);
+        results.push(candidate);
       } catch { /* This profile has no feasible plan for this source. */ }
     }
     return { ...(representative ?? {pages: [], fixes: []}), issues: [{ details: { results } }] };
@@ -107,11 +115,11 @@ async function processDocument(browser, url, document) {
     const analysis = await analyzePdf({ ...options, strategy: probe });
     const candidates = analysis.issues[0]?.details?.results || [];
     const variants = [];
-    const visual = new Set();
+    const visual = new Map();
     const rejected = [];
-    if (candidates.length <= 1) return { ...document, variants, rejected };
-    for (const { options: params, signature } of candidates) {
-      if (variants.length >= 8) break;
+    if (!nearby && candidates.length <= 1) return { ...document, variants, rejected };
+    for (const { options: params, signature, equivalentOptions } of candidates) {
+      if (!nearby && variants.length >= 8) break;
       const id = digest(document.id + '\0' + signature).slice(0, 20);
       const folder = join(directory, 'renders', id);
       await mkdir(folder, { recursive: true });
@@ -134,9 +142,15 @@ async function processDocument(browser, url, document) {
         if (images.length !== printed.pages) throw new Error('图像页数不一致');
         const imageHashes = await Promise.all(images.map(async image => digest(await readFile(join(folder, image)))));
         const visualId = digest(imageHashes.join('\n'));
-        if (visual.has(visualId)) continue;
-        visual.add(visualId);
-        variants.push({ id, options: params, visualId, signature, images, costs: details(result, params) });
+        const existing = visual.get(visualId);
+        if (existing) {
+          if (nearby) existing.equivalentOptions.push(...equivalentOptions);
+          continue;
+        }
+        const variant = { id, options: params, visualId, signature, images, costs: details(result, params),
+          ...(nearby && { equivalentOptions }) };
+        visual.set(visualId, variant);
+        variants.push(variant);
       } catch (error) {
         rejected.push({ id, reason: error.message.split('\n')[0] });
       }
@@ -168,12 +182,22 @@ try {
   const pairCount = results.reduce((sum, doc) => sum + doc.variants.length * (doc.variants.length - 1) / 2, 0);
   const activeDocuments = results.filter(doc => doc.variants.length > 1).length;
   const manifest = { version: 1, datasetId, createdAt: new Date().toISOString(), browser: browser.version(),
-    profiles, activeDocuments, pairCount, documents: results };
+    profiles, activeDocuments, pairCount, documents: results, ...(nearby && { profileSet: 'near-default' }) };
   await writeFile(join(directory, 'manifest.json'), JSON.stringify(manifest, null, 2));
-  if (pairCount < 100) throw new Error('生成了 ' + pairCount + ' 组非重复比较，少于 100。详见 ' + directory);
-  const staging = join(root, 'current-' + datasetId + '.json');
-  await writeFile(staging, JSON.stringify({ datasetId }));
-  await rename(staging, join(root, 'current.json'));
+  if (nearby) {
+    const { stats, ready } = planPilotV2(manifest);
+    const summary = { seed: seedV2, ready, profiles: profiles.length, documents: results.length,
+      validatedLayouts: results.reduce((n, doc) => n + doc.variants.length, 0),
+      rejectedLayouts: results.reduce((n, doc) => n + doc.rejected.length, 0), ...stats };
+    await writeFile(join(directory, 'pilot-v2-summary.json'), JSON.stringify(summary, null, 2) + '\n');
+    console.log('近默认值材料已单独归档，未替换现有题库：' + directory);
+    console.log(`试评：${stats.originals} 道原题，${stats.repeats} 道重复题${ready ? '。' : '，不足 40 道，未启用。'}`);
+  } else {
+    if (pairCount < 100) throw new Error('生成了 ' + pairCount + ' 组非重复比较，少于 100。详见 ' + directory);
+    const staging = join(root, 'current-' + datasetId + '.json');
+    await writeFile(staging, JSON.stringify({ datasetId }));
+    await rename(staging, join(root, 'current.json'));
+  }
   console.log(`${results.length} 份文档，${activeDocuments} 份产生差异，${pairCount} 组可评。`);
 } finally {
   await browser?.close();
