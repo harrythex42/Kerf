@@ -10,11 +10,12 @@ import { prepareDocument, contentWarning } from './document.mjs';
 import { boxOverflow } from './page-checks.mjs';
 import { archiveSource, sourceStemExists } from './source-archive.mjs';
 import { captureTables, inspectTables } from '../../scripts/check-table-fragments.mjs';
+import manifest from './package.json' with { type: 'json' };
 
 const directory = resolve(process.env.UNSLICED_OUTPUT_DIR || join(homedir(), 'Documents', 'Unsliced'));
 const keepSource = process.env.UNSLICED_KEEP_SOURCE === '1';
 const pagination = { strategy: 'optimal', parameters: DEFAULT_OPTIMAL_OPTIONS };
-const server = new McpServer({ name: 'unsliced', version: '0.1.2' });
+const server = new McpServer({ name: 'unsliced', version: manifest.version });
 
 function sourceSchema() {
   // A separate schema per field keeps tools/list from replacing the second field with a reference.
