@@ -3,6 +3,7 @@ import { appendFile, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { digest } from './documents.mjs';
+import { buildPilot } from './pilot.mjs';
 
 const here = fileURLToPath(new URL('./', import.meta.url));
 const root = fileURLToPath(new URL('../../output/review/', import.meta.url));
@@ -17,6 +18,7 @@ const { datasetId } = JSON.parse(current);
 const folder = join(root, 'datasets', datasetId);
 const { documents, pairCount, activeDocuments } = JSON.parse(await readFile(join(folder, 'manifest.json'), 'utf8'));
 const votes = new Map();
+const pilotVotes = new Map();
 const queue = new Map();
 const images = new Map();
 const byDoc = [];
@@ -38,6 +40,10 @@ for (const doc of documents) {
   if (docPairs.length) byDoc.push(docPairs);
 }
 
+const pilot = buildPilot([...pairs.values()]);
+const pilotPairs = new Map(pilot.map(pair => [pair.id, pair]));
+const pilotDocuments = new Set(pilot.map(pair => pair.document.path)).size;
+
 const old = await readFile(votesPath, 'utf8').catch(error => {
   if (error.code === 'ENOENT') return '';
   throw error;
@@ -45,8 +51,10 @@ const old = await readFile(votesPath, 'utf8').catch(error => {
 for (const line of old.split('\n').filter(Boolean)) {
   const vote = JSON.parse(line);
   if (vote.datasetId !== datasetId) continue;
-  if (!votes.has(vote.reviewer)) votes.set(vote.reviewer, new Map());
-  votes.get(vote.reviewer).set(vote.pairId, vote);
+  const records = vote.mode === 'pilot' ? pilotVotes : votes;
+  if (records === pilotVotes && !pilotPairs.has(vote.pairId)) continue;
+  if (!records.has(vote.reviewer)) records.set(vote.reviewer, new Map());
+  records.get(vote.reviewer).set(vote.pairId, vote);
 }
 
 const page = await readFile(join(here, 'index.html'));
@@ -79,31 +87,34 @@ function orderFor(reviewer) {
 }
 
 function orientation(pair, reviewer) {
-  const reverse = parseInt(digest(datasetId + '\0' + reviewer + '\0' + pair.id)[0], 16) % 2;
-  return reverse ? [pair.b, pair.a] : [pair.a, pair.b];
+  const reverse = parseInt(digest(datasetId + '\0' + reviewer + '\0' + (pair.repeatOf ?? pair.id))[0], 16) % 2 === 1;
+  return reverse !== Boolean(pair.repeatOf) ? [pair.b, pair.a] : [pair.a, pair.b];
 }
 
-function nextPair(reviewer) {
-  const done = votes.get(reviewer);
-  const pair = orderFor(reviewer).find(item => !done?.has(item.id));
+function nextPair(reviewer, trial) {
+  const done = (trial ? pilotVotes : votes).get(reviewer);
+  const pair = (trial ? pilot : orderFor(reviewer)).find(item => !done?.has(item.id));
   const preview = variant => ({ images: variant.images.map(name => '/images/' + variant.id + '/' + name) });
   const sides = pair && orientation(pair, reviewer);
-  return { completed: done?.size ?? 0, pairCount, activeDocuments, documentCount: documents.length,
+  return { completed: done?.size ?? 0, pairCount: trial ? pilot.length : pairCount,
+    activeDocuments: trial ? pilotDocuments : activeDocuments, documentCount: trial ? pilotDocuments : documents.length,
     pair: pair ? { id: pair.id, left: preview(sides[0]), right: preview(sides[1]) } : null };
 }
 
-function saveVote(reviewer, pair, choice) {
+function saveVote(reviewer, pair, choice, trial) {
   const operation = writing.then(async () => {
-    if (!votes.has(reviewer)) votes.set(reviewer, new Map());
-    const records = votes.get(reviewer);
+    const target = trial ? pilotVotes : votes;
+    if (!target.has(reviewer)) target.set(reviewer, new Map());
+    const records = target.get(reviewer);
     // A retry after a lost response must not record a second vote.
     if (records.has(pair.id)) return records.get(pair.id);
-    if (nextPair(reviewer).pair?.id !== pair.id) return null;
+    if (nextPair(reviewer, trial).pair?.id !== pair.id) return null;
     const [left, right] = orientation(pair, reviewer);
     const recorded = ({ id, options, visualId, signature, costs }) => ({ id, options, visualId, signature, costs });
     const entry = { schemaVersion: 1, datasetId, pairId: pair.id, reviewer, recordedAt: new Date().toISOString(),
       document: { ...pair.document, archive: `datasets/${datasetId}/sources/${pair.document.path}` },
       left: recorded(left), right: recorded(right), choice, chosenVariant: { left: left.id, right: right.id, tie: null }[choice] };
+    if (trial) Object.assign(entry, { mode: 'pilot', originalPairId: pair.originalPairId, repeatOf: pair.repeatOf ?? null });
     await appendFile(votesPath, JSON.stringify(entry) + '\n', { encoding: 'utf8', flush: true });
     records.set(pair.id, entry);
     return entry;
@@ -125,7 +136,9 @@ const server = createServer(async (req, res) => {
       return json(res, 403, { error: '请使用本机评审台地址。' });
     if (req.method === 'GET' && url.pathname === '/api/next') {
       const reviewer = reviewerName(url.searchParams.get('reviewer'));
-      return reviewer ? json(res, 200, nextPair(reviewer)) : json(res, 400, { error: '请输入 1 至 60 字的评审人名字。' });
+      const trial = url.searchParams.get('mode') === 'pilot';
+      if (trial && !pilot.length) return json(res, 503, { error: '当前材料凑不齐试评题，请使用全量评审。' });
+      return reviewer ? json(res, 200, nextPair(reviewer, trial)) : json(res, 400, { error: '请输入 1 至 60 字的评审人名字。' });
     }
     if (req.method === 'POST' && url.pathname === '/api/vote') {
       if (!/^application\/json(?:;|$)/iu.test(req.headers['content-type'] || '') ||
@@ -140,11 +153,12 @@ const server = createServer(async (req, res) => {
       let body;
       try { body = JSON.parse(text); } catch { return json(res, 400, { error: '请求格式不正确。' }); }
       const reviewer = reviewerName(body?.reviewer);
-      const pair = pairs.get(body?.pairId);
+      const trial = body?.mode === 'pilot';
+      const pair = (trial ? pilotPairs : pairs).get(body?.pairId);
       if (!reviewer || !pair || !['left', 'right', 'tie'].includes(body.choice))
         return json(res, 400, { error: '这条评审信息不完整。' });
-      const vote = await saveVote(reviewer, pair, body.choice);
-      return vote ? json(res, 200, nextPair(reviewer)) : json(res, 409, { error: '此组已过期，请重新进入评审。' });
+      const vote = await saveVote(reviewer, pair, body.choice, trial);
+      return vote ? json(res, 200, nextPair(reviewer, trial)) : json(res, 409, { error: '此组已过期，请重新进入评审。' });
     }
     if (req.method === 'GET' && staticFiles.has(url.pathname)) {
       const [body, type] = staticFiles.get(url.pathname);

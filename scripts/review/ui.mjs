@@ -5,6 +5,7 @@ const review = $('review');
 const session = document.querySelector('.session');
 const preview = $('preview');
 const voteButtons = [...document.querySelectorAll('[data-vote]')];
+const trial = new URLSearchParams(location.search).get('mode') === 'pilot';
 let current;
 let reviewer = '';
 let busy = false;
@@ -53,7 +54,8 @@ function render(data) {
   session.hidden = false;
   review.hidden = !current;
   $('complete').hidden = Boolean(current);
-  $('progress').textContent = '已评 ' + data.completed + ' 组 · ' + reviewer;
+  $('progress').textContent = trial ? `试评 ${data.completed}/${data.pairCount} 组 · ${reviewer}`
+    : '已评 ' + data.completed + ' 组 · ' + reviewer;
   if (current) {
     renderPages('left', current.left);
     renderPages('right', current.right);
@@ -69,7 +71,7 @@ async function submit(choice) {
   try {
     const data = await request('/api/vote', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reviewer, pairId: current.id, choice })
+      body: JSON.stringify({ reviewer, pairId: current.id, choice, ...(trial && { mode: 'pilot' }) })
     });
     render(data);
   } catch (error) {
@@ -81,13 +83,18 @@ async function submit(choice) {
 }
 
 input.value = localStorage.getItem('unsliced-reviewer') || '';
+if (trial) {
+  $('start').textContent = '开始试评';
+  $('mode-link').href = '/';
+  $('mode-link').textContent = '改做全量评审';
+}
 login.addEventListener('submit', async event => {
   event.preventDefault();
   if (busy) return;
   busy = true;
   try {
     const name = input.value.trim();
-    const data = await request('/api/next?' + new URLSearchParams({ reviewer: name }));
+    const data = await request('/api/next?' + new URLSearchParams({ reviewer: name, ...(trial && { mode: 'pilot' }) }));
     reviewer = name;
     localStorage.setItem('unsliced-reviewer', name);
     render(data);
