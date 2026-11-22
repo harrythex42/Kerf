@@ -24,6 +24,8 @@ npm 包 `unsliced-pdf-mcp` 待发布。发布后，安装 Node.js 22 或更新�
 
 现在可从源码使用。macOS 和 Linux 的命令栏填启动脚本 `scripts/unsliced-mcp` 的完整路径。Windows 的配置和浏览器镜像设置见安装说明。[中文安装说明](docs/cherry-studio.md)
 
+想参与分页偏好评审，可使用本地盲评页面。[分页评审台说明](docs/pagination-review.md)
+
 ### 致谢
 
 Unsliced 基于 BreakFlow 修改，保留了原项目的 MIT 许可证和版权声明。随包分发的 Unsliced Sans SC 源自 Noto Sans SC，采用 SIL Open Font License 1.1。[BreakFlow](https://github.com/mehmetduran932/BreakFlow) · [MIT 许可证](LICENSE) · [字体许可证](packages/playwright/assets/fonts/OFL.txt)

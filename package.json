@@ -10,6 +10,8 @@
     "test:browser": "playwright test",
     "acceptance": "turbo run build && node scripts/acceptance.mjs",
     "test:mcp": "node packages/mcp/acceptance.mjs",
+    "review:prepare": "turbo run build && node scripts/review/prepare.mjs",
+    "review": "node scripts/review/server.mjs",
     "typecheck": "turbo run typecheck",
     "lint": "eslint packages/**/src --ext .ts",
     "clean": "turbo run clean"
