@@ -14,7 +14,7 @@ Install [Node.js 22 or newer](https://nodejs.org/en/download), then add a local 
 npx -y unsliced-pdf-mcp
 ```
 
-[Version 0.1.0 is published on npm](https://www.npmjs.com/package/unsliced-pdf-mcp/v/0.1.0). Any MCP client that can launch a local stdio server can use it. No HTTP URL or separate installation from source is required.
+[Version 0.1.1 is published on npm](https://www.npmjs.com/package/unsliced-pdf-mcp/v/0.1.1). Any MCP client that can launch a local stdio server can use it. No HTTP URL or separate installation from source is required.
 
 **OpenCode V2** — merge into `opencode.jsonc`. [Official documentation](https://opencode.ai/docs/mcp-servers#local).
 
@@ -76,7 +76,7 @@ Unsliced（分寸）是本地 MCP 工具，把 Markdown 或 HTML 排成文字可
 npx -y unsliced-pdf-mcp
 ```
 
-[0.1.0 版已在 npm 发布](https://www.npmjs.com/package/unsliced-pdf-mcp/v/0.1.0)。任何能启动本地 STDIO 服务的 MCP 客户端都可以使用，不需要 HTTP 地址，也不需要下载源码安装。
+[0.1.1 版已在 npm 发布](https://www.npmjs.com/package/unsliced-pdf-mcp/v/0.1.1)。任何能启动本地 STDIO 服务的 MCP 客户端都可以使用，不需要 HTTP 地址，也不需要下载源码安装。
 
 **OpenCode V2**：合并到 `opencode.jsonc`。[官方说明](https://opencode.ai/docs/mcp-servers#local)。
 

@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { statSync } from 'node:fs';
 import { cp, mkdir, mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -6,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 import { build } from 'tsup';
 
 const project = fileURLToPath(new URL('../', import.meta.url));
+const repository = 'https://github.com/harrythex42/Unsliced';
+const rawMain = 'https://raw.githubusercontent.com/harrythex42/Unsliced/main';
 const { name: packageName, version, dependencies } = JSON.parse(
   await readFile(join(project, 'packages/mcp/package.json'), 'utf8')
 );
@@ -24,8 +27,9 @@ try {
   }
   await writeFile(join(staging, 'package.json'), JSON.stringify({
     name, version, description: 'Unsliced MCP server for searchable, optimally paginated PDFs',
+    mcpName: 'io.github.harrythex42/unsliced',
     type: 'module', bin: { [name.split('/').at(-1)]: './dist/server.mjs' },
-    engines: { node: '>=22' }, license: 'MIT', repository: 'https://github.com/harrythex42/Unsliced',
+    engines: { node: '>=22' }, license: 'MIT', repository,
     files: ['dist', 'assets', 'LICENSE', 'README.md'], dependencies: runtime
   }, null, 2));
   await build({
@@ -38,8 +42,15 @@ try {
   await cp(join(project, 'packages/browser/dist/index.global.js'), join(staging, 'dist/index.global.js'));
   await cp(join(project, 'packages/playwright/assets/fonts'), join(staging, 'assets/fonts'), { recursive: true });
   await cp(join(project, 'LICENSE'), join(staging, 'LICENSE'));
-  await writeFile(join(staging, 'README.md'), '# Unsliced MCP\n\nRun `npx -y ' + name +
-    '` to start the local PDF tool.\n\n[Setup / 中文安装说明](https://github.com/harrythex42/Unsliced/blob/main/docs/setup.md)\n');
+  const readme = await readFile(join(project, 'README.md'), 'utf8');
+  const npmReadme = readme.replace(/\]\((?:\.\/)?((?:docs|samples|packages)\/[^\s()?#]+|LICENSE)([?#][^\s()]*)?\)/gu,
+    (_, path, suffix = '') => {
+      const base = /^docs\/images\/[^/]+\.png$/u.test(path)
+        ? rawMain
+        : `${repository}/${path.endsWith('/') || statSync(join(project, path), { throwIfNoEntry: false })?.isDirectory() ? 'tree' : 'blob'}/main`;
+      return `](${base}/${path}${suffix})`;
+    });
+  await writeFile(join(staging, 'README.md'), npmReadme);
   await mkdir(destination, { recursive: true });
   execFileSync(process.platform === 'win32' ? 'cmd.exe' : 'npm',
     [...(process.platform === 'win32' ? ['/d', '/c', 'npm.cmd'] : []), 'pack', '--pack-destination', destination],

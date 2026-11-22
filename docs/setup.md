@@ -6,7 +6,7 @@
 
 ### Any local MCP client
 
-Install [Node.js 22 or later](https://nodejs.org/en/download). Add a local MCP server using **stdio**, with command `npx` and arguments `-y` and `unsliced-pdf-mcp`. The client runs `npx -y unsliced-pdf-mcp` for you. [Version 0.1.0 is available on npm](https://www.npmjs.com/package/unsliced-pdf-mcp/v/0.1.0). Unsliced does not expose an HTTP URL; a client that only accepts remote MCP URLs cannot connect directly.
+Install [Node.js 22 or later](https://nodejs.org/en/download). Add a local MCP server using **stdio**, with command `npx` and arguments `-y` and `unsliced-pdf-mcp`. The client runs `npx -y unsliced-pdf-mcp` for you. [Version 0.1.1 is available on npm](https://www.npmjs.com/package/unsliced-pdf-mcp/v/0.1.1). Unsliced does not expose an HTTP URL; a client that only accepts remote MCP URLs cannot connect directly.
 
 ### OpenCode
 
@@ -60,7 +60,7 @@ PDFs go to `Documents/Unsliced` in your home directory unless you set `UNSLICED_
 
 ### 通用方式：支持本地 MCP 的客户端
 
-安装 [Node.js 22 或更新版本](https://nodejs.org/zh-cn/download)。添加本地 **STDIO** MCP 服务：命令填 `npx`，参数依次填 `-y` 和 `unsliced-pdf-mcp`。客户端会替你运行 `npx -y unsliced-pdf-mcp`。[0.1.0 版已在 npm 发布](https://www.npmjs.com/package/unsliced-pdf-mcp/v/0.1.0)。Unsliced 不提供 HTTP 地址，只接受远程 MCP 地址的客户端无法直接连接。
+安装 [Node.js 22 或更新版本](https://nodejs.org/zh-cn/download)。添加本地 **STDIO** MCP 服务：命令填 `npx`，参数依次填 `-y` 和 `unsliced-pdf-mcp`。客户端会替你运行 `npx -y unsliced-pdf-mcp`。[0.1.1 版已在 npm 发布](https://www.npmjs.com/package/unsliced-pdf-mcp/v/0.1.1)。Unsliced 不提供 HTTP 地址，只接受远程 MCP 地址的客户端无法直接连接。
 
 ### OpenCode
 
