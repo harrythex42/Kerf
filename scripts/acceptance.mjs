@@ -210,9 +210,13 @@ async function testTableFaults(page, directory, sections, inspect) {
   await writeFile(join(output, 'table-faults.txt'), evidence.join('\n') + '\n');
 }
 
-function renderReport(rows) {
+function renderReport(rows, browser) {
+  const launch = browser.launchMode === 'custom-executable'
+    ? '通过 `UNSLICED_CHROMIUM` 指定浏览器'
+    : '由 Playwright 启动默认 Chromium';
   const lines = [
     '# Unsliced 排版验收', '', '[打开逐页并排图片](comparison.html)', '',
+    `浏览器版本：${browser.version}。启动方式：${launch}（无界面）。`, '',
     '留白以可排版高度为基准。最后一页单列，留白不计为缺点。',
     '表格只允许在完整数据行之间分页。续页逐行核对原表和表头。有意外切块、页底标题、内容越界、页数不一致、文字差异或意外错误时，验收失败。', '',
     '| 样例 | 算法 | 总代价 | 结果 | PDF 页数 | 前几页留白 | 最后一页留白 | 表格各段行数 | 意外切块 | 页底标题 | 文字核对 |',
@@ -239,9 +243,14 @@ await mkdir(output, { recursive: true });
 const server = await startSampleServer();
 let browser;
 try {
-  browser = await chromium.launch(process.env.UNSLICED_CHROMIUM
-    ? { executablePath: process.env.UNSLICED_CHROMIUM }
-    : {});
+  const executablePath = process.env.UNSLICED_CHROMIUM || undefined;
+  const headless = true;
+  browser = await chromium.launch({ executablePath, headless });
+  const browserInfo = {
+    version: browser.version(),
+    launchMode: executablePath ? 'custom-executable' : 'playwright-default',
+    headless
+  };
   const rows = [];
   const base = 'http://127.0.0.1:' + server.address().port;
   for (const name of names) {
@@ -276,8 +285,8 @@ try {
       }
     }
   }
-  await writeFile(join(output, 'metrics.json'), JSON.stringify({ rows, sweep }, null, 2));
-  const report = renderReport(rows);
+  await writeFile(join(output, 'metrics.json'), JSON.stringify({ rows, sweep, browser: browserInfo }, null, 2));
+  const report = renderReport(rows, browserInfo);
   for (const row of sweep) {
     for (const error of row.details) process.stderr.write(row.filename + ' (' + row.penalty + '): ' + error + '\n');
   }
