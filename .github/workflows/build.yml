@@ -62,7 +62,9 @@ jobs:
 
     - name: Install package outside the workspace
       shell: bash
-      run: npm install --prefix "$RUNNER_TEMP/unsliced-pack-test" ./output/npm/unsliced-pdf-mcp-0.1.2.tgz
+      run: |
+        version=$(node -p "require('./packages/mcp/package.json').version")
+        npm install --prefix "$RUNNER_TEMP/unsliced-pack-test" "./output/npm/unsliced-pdf-mcp-$version.tgz"
 
     - name: Run packed MCP PDF acceptance with first browser download
       run: pnpm test:mcp

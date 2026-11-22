@@ -8,6 +8,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { openBrowser } from './browser.mjs';
 import { sourceSections } from './page-checks.mjs';
+import manifest from './package.json' with { type: 'json' };
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const output = resolve(root, 'output', 'mcp');
@@ -118,6 +119,7 @@ let browser;
 const image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==';
 try {
   await client.connect(transport);
+  assert.equal(client.getServerVersion()?.version, manifest.version);
   assert.deepEqual((await client.listTools()).tools.map(tool => tool.name), ['create_pdf']);
   const cases = [
     { name: 'markdown-基础', input: { markdown: '# 中文标题\n\n完整段落。\n\n- 项目一\n- 项目二\n\n> 原文引用\n\n```js\nconst ready = true;\n```\n\n![印章](' + image + ')', paper_size: 'A5' },
