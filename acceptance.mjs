@@ -128,13 +128,14 @@ try {
       Array.from({ length: 62 }, (_, i) => '| ' + (i+1) + ' | 检查通过 |').join('\n') },
       expected: '季度巡检序号结果' + Array.from({ length: 62 }, (_, i) => (i+1) + '检查通过').join(''), split: true },
   ];
-  for (const [name, selector] of [['report-genius-factory','#rpt'], ['table-long','main']]) {
+  for (const [name, selector, stylesheet] of [
+    ['northline-quarterly', '[data-unsliced-root]', 'editorial-reports.css'],
+    ['table-long', 'main', 'table-samples.css']
+  ]) {
     let html = await readFile(join(root, 'samples', name + '.html'), 'utf8');
-    if (name === 'table-long') {
-      const css = await readFile(join(root, 'samples/table-samples.css'), 'utf8');
-      html = html.replace('<link rel="stylesheet" href="table-samples.css">', '<style>' + css + '</style>');
-    }
-    cases.push({ name, input: { html }, selector, split: name === 'table-long' });
+    const css = await readFile(join(root, 'samples', stylesheet), 'utf8');
+    html = html.replace(`<link rel="stylesheet" href="${stylesheet}">`, '<style>' + css + '</style>');
+    cases.push({ name, input: { html }, selector, split: true, expectBundledFont: name === 'table-long' });
   }
   for (const sample of cases) {
     const result = await call({ filename: sample.name, ...sample.input });
@@ -159,7 +160,7 @@ try {
     }));
     assert.deepEqual(text.differences, []);
     assert.equal(text.pages, pages);
-    assert(text.embeddedFonts.some(font => font.includes('UnslicedSansSC')));
+    if (sample.expectBundledFont !== false) assert(text.embeddedFonts.some(font => font.includes('UnslicedSansSC')));
     if (sample.input.paper_size === 'A5') {
       const [width, height] = text.paperPoints;
       assert(Math.abs(width - 419.53) < 1 && Math.abs(height - 595.28) < 1);
