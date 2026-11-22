@@ -17,7 +17,12 @@ small = ImageFont.truetype(str(font_path), 16)
 names = {
     "balanced-sections": "固定高度段落", "block-limit": "501 个内容块",
     "breakflow-report-zh": "中文报告", "invoice": "服务发票",
-    "layout-stress": "图表与密集标题", "report-genius-factory": "天才工厂报告",
+    "layout-stress": "图表与密集标题",
+    "northline-quarterly": "Northline 季度运营报告",
+    "alder-launch-retrospective": "Alder 上线复盘",
+    "bracken-device-guide": "Bracken 产品部署说明",
+    "harborlight-service-review": "Harborlight 客服交接复盘",
+    "cedarway-readiness-report": "Cedarway 新班次上线报告",
     "root-font-size": "继承字号", "root-text": "容器中的裸文本",
     "table-small": "3 行小表", "table-medium": "15 行中表", "table-long": "60 行长表",
     "table-multiline": "多行文字单元格", "table-heading": "表前标题与说明",

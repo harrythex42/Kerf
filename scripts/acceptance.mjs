@@ -11,7 +11,9 @@ import { generatePdf } from '../packages/playwright/dist/index.js';
 
 const project = fileURLToPath(new URL('../', import.meta.url));
 const samples = join(project, 'samples');
-const output = join(project, 'output', 'acceptance');
+const letterDemo = process.argv.includes('--letter-demo');
+const paper = letterDemo ? 'Letter' : 'A4';
+const output = join(project, 'output', letterDemo ? 'acceptance-letter-demo' : 'acceptance');
 const textVerifier = join(project, 'scripts', 'verify_pdf_text.py');
 const python = process.env.UNSLICED_PYTHON || 'python3';
 process.env.PYTHONUTF8 = '1';
@@ -30,7 +32,11 @@ const cases = {
   'table-long.html': { mustSplit: true },
   'table-small.html': { mustStayWhole: true },
   'table-heading.html': { mustKeepTableIntro: true },
-  'report-genius-factory.html': { selector: '#rpt', expectBundledFont: true }
+  'northline-quarterly.html': { mustSplit: true },
+  'alder-launch-retrospective.html': { mustSplit: true },
+  'bracken-device-guide.html': { mustSplit: true },
+  'harborlight-service-review.html': { mustSplit: true },
+  'cedarway-readiness-report.html': { mustSplit: true }
 };
 
 const contentTypes = {
@@ -103,7 +109,8 @@ async function checkSample(browser, url, filename, strategy, splitLines, faults 
     const sources = await page.locator(selector).evaluate(captureTables);
     const optimal = { tableSplitLines: splitLines };
     const model = pageCostModel(optimal);
-    const { result } = await generatePdf({ url, selector, strategy, config: { optimal }, output: pdf, playwrightPage: page, settleTimeoutMs: 0 });
+    const { result } = await generatePdf({ url, selector, strategy, config: { optimal }, page: { format: paper },
+      output: pdf, playwrightPage: page, settleTimeoutMs: 0 });
 
     const checkTables = () => page.evaluate(inspectTables, { sources, minimum: 2, issues: result.issues });
     const tables = await checkTables();
@@ -216,6 +223,7 @@ function renderReport(rows, browser) {
     : '由 Playwright 启动默认 Chromium';
   const lines = [
     '# Unsliced 排版验收', '', '[打开逐页并排图片](comparison.html)', '',
+    `纸张：${paper === 'Letter' ? 'US Letter' : paper}。`, '',
     `浏览器版本：${browser.version}。启动方式：${launch}（无界面）。`, '',
     '留白以可排版高度为基准。最后一页单列，留白不计为缺点。',
     '表格只允许在完整数据行之间分页。续页逐行核对原表和表头。有意外切块、页底标题、内容越界、页数不一致、文字差异或意外错误时，验收失败。', '',
@@ -237,7 +245,8 @@ function renderReport(rows, browser) {
 
 execFileSync(python, ['-c', 'import pypdf, pymupdf'], { stdio: 'inherit' });
 
-const names = (await readdir(samples, { recursive: true })).filter(name => name.endsWith('.html')).sort();
+const names = letterDemo ? ['cedarway-readiness-report.html']
+  : (await readdir(samples, { recursive: true })).filter(name => name.endsWith('.html')).sort();
 if (!names.length) throw new Error('samples/ 下找不到 HTML 验收样例。');
 await mkdir(output, { recursive: true });
 const server = await startSampleServer();
@@ -285,7 +294,7 @@ try {
       }
     }
   }
-  await writeFile(join(output, 'metrics.json'), JSON.stringify({ rows, sweep, browser: browserInfo }, null, 2));
+  await writeFile(join(output, 'metrics.json'), JSON.stringify({ paper, rows, sweep, browser: browserInfo }, null, 2));
   const report = renderReport(rows, browserInfo);
   for (const row of sweep) {
     for (const error of row.details) process.stderr.write(row.filename + ' (' + row.penalty + '): ' + error + '\n');

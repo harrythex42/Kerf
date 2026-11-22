@@ -39,7 +39,7 @@ try {
   await cp(join(project, 'packages/playwright/assets/fonts'), join(staging, 'assets/fonts'), { recursive: true });
   await cp(join(project, 'LICENSE'), join(staging, 'LICENSE'));
   await writeFile(join(staging, 'README.md'), '# Unsliced MCP\n\nRun `npx -y ' + name +
-    '` to start the local PDF tool.\n\n[Setup / 中文安装说明](https://github.com/harrythex42/Unsliced/blob/main/docs/cherry-studio.md)\n');
+    '` to start the local PDF tool.\n\n[Setup / 中文安装说明](https://github.com/harrythex42/Unsliced/blob/main/docs/setup.md)\n');
   await mkdir(destination, { recursive: true });
   execFileSync(process.platform === 'win32' ? 'cmd.exe' : 'npm',
     [...(process.platform === 'win32' ? ['/d', '/c', 'npm.cmd'] : []), 'pack', '--pack-destination', destination],

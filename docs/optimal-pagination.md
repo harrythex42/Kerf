@@ -70,3 +70,39 @@ minimum row counts. Acceptance compares the printed data cells to the input
 in source order and verifies each repeated header at the exact beginning of
 its PDF page. It deliberately removes a header and moves half a data row to
 the next page, then restores the rendered nodes.
+
+## Greedy vs. global optimum
+
+**Why US Letter?** We show [Cedarway's service readiness report](../samples/cedarway-readiness-report.html) on US Letter because the same report exposes a difference in break choices at that paper size. Both strategies received the same source and 15 mm margins. On A4, both strategies produced four pages with identical page images; the emptiest non-final page had 11.2% blank space in both. Four of the five fictional reports in the comparison set showed identical or nearly identical results with greedy and global pagination under the tested settings. This example shows when global planning can help, not how often it wins.
+
+| US Letter | Greedy | Global optimum |
+| --- | --- | --- |
+| PDF pages | 5 | 5 |
+| Cut blocks / headings stranded at the bottom | 0 / 0 | 0 / 0 |
+| Blank space on the emptiest non-final page | 52.9% (page 2) | 32.8% (page 3) |
+
+[![Cedarway on US Letter: greedy (left) and global optimum (right)](comparison/cedarway-letter.png)](comparison/cedarway-letter.png)
+
+Blank space is measured at the bottom of the rendered PDF within the 15 mm margins. The last page is always excluded from the maximum. Reproduce the Letter run with `pnpm acceptance --letter-demo`.
+
+**为什么用 US Letter？** 同一份 [Cedarway 新班次上线报告](../samples/cedarway-readiness-report.html) 用 Letter 排版时，两种算法的断点和留白差别比较清楚。两版用同一原稿和 15 毫米页边距。换成 A4 后，两版都是 4 页，逐页图片完全相同；不计末页，最空一页的留白都是 11.2%。按这次比较的设置，5 份候选报告中有 4 份的贪心和全局最优结果相同或几乎相同。Cedarway 展示的是全局规划**什么时候**有帮助，不代表它通常会胜出。
+
+Letter 两版均为 5 页，没有意外切块或页底孤立标题。不计末页，贪心版最空一页留白 52.9%（第 2 页），全局最优版为 32.8%（第 3 页）。数字以实际 PDF 的页底留白为准，不含页边距。
+
+## Related work
+
+- Donald E. Knuth and Michael F. Plass, [*Breaking Paragraphs into Lines*](https://doi.org/10.1002/spe.4380111102), *Software: Practice and Experience* (1981). Uses dynamic programming to choose line breaks across a whole paragraph, instead of deciding line by line.
+- Michael F. Plass, [*Optimal Pagination Techniques for Automatic Typesetting Systems*](https://searchworks.stanford.edu/view/1013335), Stanford PhD dissertation (1981; [full text](https://tug.org/docs/plass/plass-thesis.pdf)). Uses a cost function and dynamic programming to place text and figures on pages.
+- Frank Mittelbach, [*A General Framework for Globally Optimized Pagination*](https://doi.org/10.1145/2960811.2960820), ACM DocEng (2016), and the [extended journal article of the same title](https://doi.org/10.1111/coin.12165), *Computational Intelligence* 35(2) (2019 issue; first published online in 2018). Presents a global page-breaking framework for TeX and explores the flexibility of paragraph lengths.
+- Anne Brüggemann-Klein, Rolf Klein, and Stefan Wohlfeil, [*On the Pagination of Complex Documents*](https://doi.org/10.1007/3-540-36477-3_5), in *Computer Science in Perspective* (2003). Optimizes the number of page turns needed to read text and find its referenced floating objects.
+
+Unsliced belongs to this family of methods. Here the input is typically AI-generated Markdown or HTML: Unsliced measures the rendered blocks in a browser and then optimizes page breaks under its own layout constraints. It does not claim to invent globally optimized pagination.
+
+### 相关研究
+
+- Donald E. Knuth 与 Michael F. Plass：[《Breaking Paragraphs into Lines》](https://doi.org/10.1002/spe.4380111102)，*Software: Practice and Experience*（1981）。用动态规划为整段文字选择断行，不逐行单独决定。
+- Michael F. Plass：[《Optimal Pagination Techniques for Automatic Typesetting Systems》](https://searchworks.stanford.edu/view/1013335)，斯坦福大学博士论文（1981，[全文](https://tug.org/docs/plass/plass-thesis.pdf)）。用代价函数和动态规划把文字和图安排到不同页面。
+- Frank Mittelbach：[《A General Framework for Globally Optimized Pagination》](https://doi.org/10.1145/2960811.2960820)，ACM DocEng（2016），以及同题的[期刊扩展版](https://doi.org/10.1111/coin.12165)，*Computational Intelligence* 35(2)（2019 年刊期，2018 年先在线发表）。为 TeX 提出全局分页框架，并研究如何利用段落行数可调整的空间。
+- Anne Brüggemann-Klein、Rolf Klein 与 Stefan Wohlfeil：[《On the Pagination of Complex Documents》](https://doi.org/10.1007/3-540-36477-3_5)，收录于 *Computer Science in Perspective*（2003）。用读正文和查找相关浮动对象所需的翻页次数来衡量和优化分页。
+
+Unsliced 属于这类方法，不是全局最优分页的首创。区别是它面向 AI 生成的 Markdown 或 HTML：先在浏览器里测量排好的内容块，再按自身的排版规则选择整份文档的分页位置。

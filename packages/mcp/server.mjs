@@ -52,7 +52,7 @@ server.registerTool('create_pdf', {
   inputSchema: {
     markdown: sourceSchema(),
     html: sourceSchema(),
-    filename: z.string().trim().min(1).max(100).describe('文件名，例如 天才工厂.pdf。只写名字，扩展名可省略。'),
+    filename: z.string().trim().min(1).max(100).describe('文件名，例如 report.pdf。只写名字，扩展名可省略。'),
     paper_size: z.enum(['A3', 'A4', 'A5', 'Letter', 'Legal', 'Tabloid']).default('A4')
   }
 }, async (source, extra) => {

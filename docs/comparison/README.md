@@ -2,6 +2,8 @@
 
 每张图从上到下排列同一份文档的各页。灰色空位表示该版本已结束。留白以分页时测得的可排版高度计算，末页留白不计代价。
 
+[README 的切口对比](../../README.md#compare-pagination)和 [Cedarway 的两种分页对比](../optimal-pagination.md#greedy-vs-global-optimum)来自五份英文报告的实测。要重跑对比，先运行 `pnpm acceptance` 和 `pnpm acceptance --letter-demo`，再运行 `npm install --prefix output/readme-comparison/tools jspdf@4.2.0` 和 `node scripts/readme-comparison.mjs`。结果在 `output/readme-comparison/index.html`。安装 Pillow 后运行 `python scripts/readme-cut-inset.py` 可生成 README 的切口特写。
+
 | 样例 | 贪心、最优逐页图 | 总代价（贪心 / 最优） | 页数（贪心 / 最优） |
 | --- | --- | ---: | ---: |
 | 固定高度段落 | [打开图片](balanced-sections.png) | 36.64 / 27.77 | 3 / 3 |
@@ -9,7 +11,6 @@
 | 中文报告 | [打开图片](breakflow-report-zh.png) | 15.31 / 15.31 | 2 / 2 |
 | 服务发票 | [打开图片](invoice.png) | 541.87 / 22.88 | 3 / 2 |
 | 图表与密集标题 | [打开图片](layout-stress.png) | 22.53 / 22.53 | 2 / 2 |
-| 天才工厂报告 | [打开图片](report-genius-factory.png) | 33.40 / 33.40 | 4 / 4 |
 | 继承字号 | [打开图片](root-font-size.png) | 7.60 / 7.60 | 1 / 1 |
 | 容器中的裸文本 | [打开图片](root-text.png) | 7.60 / 7.60 | 1 / 1 |
 | 表前标题与说明 | [打开图片](table-heading.png) | 35.27 / 22.80 | 2 / 2 |

@@ -10,7 +10,11 @@ export const categories = ['报告', '发票', '长表格', '多图', '标题密
 const catalog = {
   'balanced-sections.html': ['报告'], 'block-limit.html': ['混合资料', '#report'],
   'breakflow-report-zh.html': ['报告', '#community-report'], 'invoice.html': ['发票', '#invoice-container'],
-  'layout-stress.html': ['多图'], 'report-genius-factory.html': ['报告', '#rpt'],
+  'layout-stress.html': ['多图'], 'northline-quarterly.html': ['报告', '[data-unsliced-root]'],
+  'alder-launch-retrospective.html': ['报告', '[data-unsliced-root]'],
+  'bracken-device-guide.html': ['混合资料', '[data-unsliced-root]'],
+  'harborlight-service-review.html': ['报告', '[data-unsliced-root]'],
+  'cedarway-readiness-report.html': ['报告', '[data-unsliced-root]'],
   'root-font-size.html': ['混合资料', '#report'], 'root-text.html': ['混合资料', '#report'],
   'table-heading.html': ['标题密集'], 'table-long.html': ['长表格'], 'table-medium.html': ['长表格'],
   'table-multiline.html': ['长表格'], 'table-small.html': ['发票']
