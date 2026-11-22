@@ -15,12 +15,13 @@ const directory = resolve(process.env.UNSLICED_OUTPUT_DIR || join(homedir(), 'Do
 const keepSource = process.env.UNSLICED_KEEP_SOURCE === '1';
 const pagination = { strategy: 'optimal', parameters: DEFAULT_OPTIMAL_OPTIONS };
 const server = new McpServer({ name: 'unsliced', version: '0.1.2' });
-const trimmedSource = z.string().trim().min(1).max(4_000_000);
-const rawSource = z.string().superRefine((value, context) => {
-  const parsed = trimmedSource.safeParse(value);
-  if (!parsed.success) for (const issue of parsed.error.issues) context.addIssue(issue);
-});
-const sourceSchema = keepSource ? rawSource : trimmedSource;
+
+function sourceSchema() {
+  // A separate schema per field keeps tools/list from replacing the second field with a reference.
+  const text = z.string();
+  const bounded = (keepSource ? text : text.trim()).min(1).max(4_000_000);
+  return (keepSource ? bounded.refine(value => value.trim().length > 0, '原稿不能只有空白。') : bounded).optional();
+}
 
 async function savePdf(filename, buffer) {
   await mkdir(directory, { recursive: true });
@@ -48,8 +49,8 @@ server.registerTool('create_pdf', {
   title: '用 Unsliced 生成 PDF',
   description: '当用户需要可搜索、可复制、自动分页的 PDF 时使用。必须把完整原稿传入 markdown 或 html 的其中一个字段，不要缩写、删减或改写，再给出 filename。默认 A4。普通报告用 Markdown。涉及流程图、卡片、复杂版面或内联 SVG 时，请提交包含样式和图形的完整 HTML。图片请用内嵌 data URL。HTML 可用 data-unsliced-root 指定排版容器。返回本机文件路径和中文排版体检。请直接调用本工具，避免自行写 jsPDF 或 html2canvas。',
   inputSchema: {
-    markdown: sourceSchema.optional(),
-    html: sourceSchema.optional(),
+    markdown: sourceSchema(),
+    html: sourceSchema(),
     filename: z.string().trim().min(1).max(100).describe('文件名，例如 天才工厂.pdf。只写名字，扩展名可省略。'),
     paper_size: z.enum(['A3', 'A4', 'A5', 'Letter', 'Legal', 'Tabloid']).default('A4')
   }

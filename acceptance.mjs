@@ -29,10 +29,21 @@ function toolProcess(directory, keepSource) {
   return { client, transport, call };
 }
 
+async function checkPublishedTool(client, keepSource) {
+  const { tools } = await client.listTools();
+  assert.deepEqual(tools.map(tool => tool.name), ['create_pdf']);
+  const { properties } = tools[0].inputSchema;
+  for (const field of ['markdown', 'html']) {
+    assert.deepEqual(properties[field], { type: 'string', minLength: 1, maxLength: 4_000_000 },
+      `${field} 的公开参数定义（原稿归档${keepSource ? '开启' : '关闭'}）`);
+  }
+}
+
 async function withTool(directory, keepSource, test) {
   const { client, transport, call } = toolProcess(directory, keepSource);
   try {
     await client.connect(transport);
+    await checkPublishedTool(client, keepSource);
     await test(call);
   } finally {
     await client.close();
@@ -96,7 +107,7 @@ async function checkArchive(longMarkdown) {
       assert.deepEqual(result.warnings, ['原稿或生成记录未能保存，PDF 已正常生成。']);
       assert.equal(await readFile(join(failed, 'sources'), 'utf8'), '保留原文件');
     });
-    console.log('MCP 原稿归档：默认关闭、原样保存、同名编号和失败后继续生成均通过');
+    console.log('MCP 原稿归档：开关两种状态的参数说明、原样保存、同名编号和失败后继续生成均通过');
   } finally {
     await rm(temporary, { recursive: true, force: true });
   }
