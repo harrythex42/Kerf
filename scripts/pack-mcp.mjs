@@ -43,9 +43,9 @@ try {
   await cp(join(project, 'packages/playwright/assets/fonts'), join(staging, 'assets/fonts'), { recursive: true });
   await cp(join(project, 'LICENSE'), join(staging, 'LICENSE'));
   const readme = await readFile(join(project, 'README.md'), 'utf8');
-  const npmReadme = readme.replace(/\]\((?:\.\/)?((?:docs|samples|packages)\/[^\s()?#]+|LICENSE)([?#][^\s()]*)?\)/gu,
+  const npmReadme = readme.replace(/\]\((?:\.\/)?((?:docs|samples|packages)\/[^\s()?#]+|LICENSE|README\.zh-CN\.md)([?#][^\s()]*)?\)/gu,
     (_, path, suffix = '') => {
-      const base = /^docs\/images\/[^/]+\.png$/u.test(path)
+      const base = /^docs\/images\/[^/]+\.(?:png|svg)$/u.test(path)
         ? rawMain
         : `${repository}/${path.endsWith('/') || statSync(join(project, path), { throwIfNoEntry: false })?.isDirectory() ? 'tree' : 'blob'}/main`;
       return `](${base}/${path}${suffix})`;

@@ -2,7 +2,11 @@
 
 每张图从上到下排列同一份文档的各页。灰色空位表示该版本已结束。留白以分页时测得的可排版高度计算，末页留白不计代价。
 
-[README 的切口对比](../../README.md#compare-pagination)和 [Cedarway 的两种分页对比](../optimal-pagination.md#greedy-vs-global-optimum)来自五份英文报告的实测。要重跑对比，先运行 `pnpm acceptance` 和 `pnpm acceptance --letter-demo`，再运行 `npm install --prefix output/readme-comparison/tools jspdf@4.2.0` 和 `node scripts/readme-comparison.mjs`。结果在 `output/readme-comparison/index.html`。安装 Pillow 后运行 `python scripts/readme-cut-inset.py` 可生成 README 的切口特写。
+[README 的切口对比](../../README.md#compare-pagination)和 [Cedarway 的两种分页对比](../optimal-pagination.md#greedy-vs-global-optimum)来自五份英文报告的实测。要重跑对比，在仓库根目录依次运行：
+
+1. `pnpm acceptance` 和 `pnpm acceptance --letter-demo`，生成 A4 和 Letter 的 PDF、逐页图片和验收数据。发票的页数和留白取自 A4 验收的 `output/acceptance/metrics.json`。
+2. `npm install --prefix output/readme-comparison/tools jspdf@4.2.0`，再运行 `node scripts/readme-comparison.mjs`。对比结果在 `output/readme-comparison/index.html`，Northline 的双倍分辨率逐页图在 `output/readme-comparison/northline-quarterly/hi-res/`。
+3. 在验收所用的 Python 环境中安装 Pillow，然后运行 `python scripts/readme-cut-inset.py`。它会把英文和中文的首屏图 `hero-slices*.png` 及发票图 `invoice-pages*.png` 写入 `docs/images/`。旧版切口特写仍输出到 `output/readme-comparison/`，不会覆盖 `docs/images/` 中的旧图。
 
 | 样例 | 贪心、最优逐页图 | 总代价（贪心 / 最优） | 页数（贪心 / 最优） |
 | --- | --- | ---: | ---: |

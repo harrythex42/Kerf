@@ -32,7 +32,11 @@ h1,h2,p{margin:0 0 10px}h2{font-size:22px}figure{margin:0 0 8px}figcaption{font-
 img{display:block;width:100%;height:auto;border:1px solid #c3d1d6;box-sizing:border-box}
 .stats{padding:12px;background:#dbe9e9;font-size:16px;font-weight:600}</style>${body}</html>`;
 
-async function rasterBaseline(page, name, directory, paper) {
+function renderPages(pdf, directory, dpi) {
+  execFileSync(python, [join(root, 'scripts/render_pdf_pages.py'), pdf, join(directory, 'page'), String(dpi)]);
+}
+
+async function rasterBaseline(page, name, directory, paper, dpi = 120) {
   const [innerWidth, innerHeight] = paper === 'Letter' ? [185.9, 249.4] : [180, 267];
   const width = px(innerWidth), height = px(innerHeight);
   const source = join(root, 'samples', name + '.html');
@@ -68,7 +72,7 @@ async function rasterBaseline(page, name, directory, paper) {
   await mkdir(directory, { recursive: true });
   const pdfPath = join(directory, 'document.pdf');
   await writeFile(pdfPath, Buffer.from(pdf.output('arraybuffer')));
-  execFileSync(python, [join(root, 'scripts/render_pdf_pages.py'), pdfPath, join(directory, 'page'), '120']);
+  renderPages(pdfPath, directory, dpi);
   return { title: measured.title, label: 'jsPDF · fixed slices', pages: pageCount,
     splits: cut.size, cutTags: [...cut].map(box => box.tag), orphans, whitespace: measureBlank(pdfPath), directory,
     images: Array.from({ length: pageCount }, (_, i) =>
@@ -95,6 +99,19 @@ try {
       await Promise.all(['document.pdf', ...row.images].map(file => copyFile(join(row.directory, file), join(dest, file))));
       rows.push({ ...row, directory: dest, whitespace: measureBlank(join(dest, 'document.pdf')),
         label: row.strategy === 'optimal' ? 'Unsliced · global optimum' : 'Unsliced · greedy' });
+    }
+    if (name === 'northline-quarterly') {
+      // Capture the raster baseline at 2× rather than enlarging the legacy README panels.
+      const highRes = join(directory, 'hi-res');
+      const highResBaseline = await browser.newPage({ deviceScaleFactor: 2 });
+      try {
+        await rasterBaseline(highResBaseline, name, join(highRes, 'jspdf'), paper, 240);
+      } finally {
+        await highResBaseline.close();
+      }
+      const highResOptimal = join(highRes, 'optimal');
+      await mkdir(highResOptimal, { recursive: true });
+      renderPages(join(directory, 'optimal', 'document.pdf'), highResOptimal, 240);
     }
     const page = join(directory, 'index.html');
     const columns = rows.map(row => {
