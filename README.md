@@ -1,5 +1,7 @@
 # Unsliced MCP
 
+**Unsliced 家族 / Unsliced family:** [Core](https://github.com/harrythex42/unsliced-core) · [MCP](https://github.com/harrythex42/unsliced-mcp) · [Web](https://github.com/harrythex42/unsliced-web)
+
 Give an AI assistant a local tool for turning Markdown or HTML into searchable PDFs. Long tables break only between complete rows and repeat their headers. Chinese text can be searched and copied.
 
 [简体中文](README.zh-CN.md) · [Use Unsliced in a browser](https://harrythex42.github.io/unsliced-web/)
@@ -23,8 +25,8 @@ Ask your assistant to create a PDF and provide Markdown or HTML. Files are saved
 
 ## Development
 
-[Build a local package, run acceptance, or update the pinned engine](https://github.com/harrythex42/unsliced-mcp/blob/main/docs/development.md).
+[Build a local package, run acceptance, or update the pinned engine](docs/development.md).
 
-The shared pagination engine is maintained in [Unsliced](https://github.com/harrythex42/Unsliced). This project uses a fixed, built copy of the engine, not a second source implementation.
+This project imports a fixed, verified release directly from [Unsliced Core](https://github.com/harrythex42/unsliced-core), not from the web app. The engine ships with the MCP tool, so creating a PDF does not download it again.
 
 [MIT and BreakFlow copyright](LICENSE) · [Font license (OFL)](engine/assets/fonts/OFL.txt)

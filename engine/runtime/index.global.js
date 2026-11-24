@@ -1,4 +1,4 @@
-/*! Generated from Unsliced; BreakFlow and Unsliced contributors — MIT. See ../LICENSE. */
+/*! Generated from Unsliced Core; BreakFlow and Unsliced contributors — MIT. See ../LICENSE. */
 "use strict";
 var BreakFlow = (() => {
   var __defProp = Object.defineProperty;

@@ -1,19 +1,14 @@
-import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
-import { copyFile, cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { copyFile, cp, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
 import project from '../package.json' with { type: 'json' };
-import engine from '../engine/manifest.json' with { type: 'json' };
+import { verifyEngine } from './verify-engine.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-for (const [file, sha] of Object.entries(engine.sha256)) {
-  const bytes = await readFile(join(root, 'engine', file));
-  assert.equal(createHash('sha256').update(bytes).digest('hex'), sha, `Engine file changed: ${file}`);
-}
+await verifyEngine(join(root, 'engine'));
 const output = join(root, 'output/npm');
 const stage = await mkdtemp(join(tmpdir(), 'unsliced-mcp-pack-'));
 try {

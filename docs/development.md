@@ -14,8 +14,8 @@ Linux 如果缺少 Chromium 系统库，按 Playwright 提示安装。`pnpm acce
 
 ## 更新分页程序
 
-`engine/` 保存的是构建产物和许可证，不在这里修改分页源码。`engine/manifest.json` 记录 [核心仓库](https://github.com/harrythex42/Unsliced) 的完整提交号及各文件校验值。通常运行和验收不需要访问核心仓库。
+`engine/` 只保存从 [Unsliced Core 发布页](https://github.com/harrythex42/unsliced-core/releases) 取来的打包文件和许可证。`engine-release.json` 固定版本标签、完整源码版本号、压缩包校验值和清单校验值。打包会核对清单和每个文件。用户生成 PDF、本地打包和验收不需要再下载分页包。
 
-1. 在核心仓库选好已验收的提交，准备一个干净的检出目录。
-2. 在本项目运行 `pnpm engine:import <核心目录> <完整提交号>` 生成新产物。
-3. 跑 `pnpm acceptance`，检查 PDF 和逐页图片，再提交新的 `engine/`。不要手动修改其中的代码。要发 npm 新版本时，另走发布审批。
+1. 从 Core 的指定发布下载压缩包和校验文件。核对压缩包后，记录该版本的标签、源码版本号、压缩包和 `engine/manifest.json` 的 SHA-256 到 `engine-release.json`。如果清单中的 Playwright 版本变了，也要更新本项目依赖。
+2. 在装有 `tar` 的电脑上运行 `pnpm engine:import`，从 Core 下载、校验并更新 `engine/`。不要手动修改其中的代码。
+3. 跑 `pnpm acceptance`，检查 PDF 和逐页图片，再一起提交版本记录和 `engine/`。要发 npm 新版本时，另走发布审批。
