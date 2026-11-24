@@ -3,12 +3,22 @@
   "version": "0.1.1",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@12.3.4",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node server.mjs",
+    "pack:local": "node scripts/pack.mjs",
+    "acceptance": "node scripts/run-acceptance.mjs",
+    "engine:import": "node scripts/import-engine.mjs"
+  },
   "dependencies": {
-    "@breakflow/playwright": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.29.0",
-    "marked": "^16.4.2",
-    "playwright": "^1.49.0",
-    "sanitize-html": "^2.17.0",
-    "zod": "^3.25.0"
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "marked": "16.4.2",
+    "playwright": "1.63.0",
+    "sanitize-html": "2.18.2",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "esbuild": "0.27.7"
   }
 }

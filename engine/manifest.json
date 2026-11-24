@@ -1,0 +1,12 @@
+{
+  "upstream": "https://github.com/harrythex42/Unsliced",
+  "commit": "1743824d3c22c3b8b8bbd267435fec9f007b1e3e",
+  "sha256": {
+    "runtime/index.mjs": "8434c31206dc95b329ef8c0437c38338377a428465f8acccb4a0b3bda45588da",
+    "runtime/index.global.js": "4ddefd5d27ac3fb6407e2e2265b7a496a25bf3d72f661a7f9cfe99bc9f81e159",
+    "assets/fonts/UnslicedSansSC.ttf": "efee93dfa68719898df2ab8af547f27b7ddfc479fdd9931ecffa2bcd83821349",
+    "assets/fonts/OFL.txt": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9",
+    "assets/fonts/README.md": "3dac13eccae7da7b9638d1ad15e429ae0b73b53fa88c1357e2be97f21aeff72b",
+    "LICENSE": "26c479aab6c646db37bbcce47c13329b377d022fad1a03d751c3a7d064184a5a"
+  }
+}

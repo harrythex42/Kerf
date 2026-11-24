@@ -10,7 +10,7 @@ import { openBrowser } from './browser.mjs';
 import { sourceSections } from './page-checks.mjs';
 import manifest from './package.json' with { type: 'json' };
 
-const root = fileURLToPath(new URL('../../', import.meta.url));
+const root = fileURLToPath(new URL('./', import.meta.url));
 const output = resolve(root, 'output', 'mcp');
 const python = process.env.UNSLICED_PYTHON || 'python3';
 process.env.PYTHONUTF8 = '1';
@@ -21,7 +21,7 @@ function toolProcess(directory, keepSource) {
   if (keepSource) env.UNSLICED_KEEP_SOURCE = '1';
   else delete env.UNSLICED_KEEP_SOURCE;
   const transport = new StdioClientTransport({
-    command: process.execPath, args: [process.env.UNSLICED_TEST_MCP_ENTRY || join(root, 'packages/mcp/server.mjs')],
+    command: process.execPath, args: [process.env.UNSLICED_TEST_MCP_ENTRY || join(root, 'server.mjs')],
     env, stderr: 'inherit'
   });
   const call = args => client.callTool({ name: 'create_pdf', arguments: args }, undefined, {

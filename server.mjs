@@ -4,12 +4,12 @@ import { resolve, join } from 'node:path';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
-import { DEFAULT_OPTIMAL_OPTIONS, generatePdf } from '@breakflow/playwright';
+import { DEFAULT_OPTIMAL_OPTIONS, generatePdf } from './engine/runtime/index.mjs';
 import { openBrowser } from './browser.mjs';
 import { prepareDocument, contentWarning } from './document.mjs';
 import { boxOverflow } from './page-checks.mjs';
 import { archiveSource, sourceStemExists } from './source-archive.mjs';
-import { captureTables, inspectTables } from '../../scripts/check-table-fragments.mjs';
+import { captureTables, inspectTables } from './scripts/check-table-fragments.mjs';
 import manifest from './package.json' with { type: 'json' };
 
 const directory = resolve(process.env.UNSLICED_OUTPUT_DIR || join(homedir(), 'Documents', 'Unsliced'));
