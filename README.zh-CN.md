@@ -2,6 +2,8 @@
 
 **把 Markdown 或 HTML 排成文字可搜索的 PDF，表格和流程图不会被切成两半。**
 
+**不想安装 MCP？[直接在网页上用 Unsliced](https://harrythex42.github.io/Unsliced/)。** 推荐 Chrome 或 Edge。
+
 [![npm](https://img.shields.io/npm/v/unsliced-pdf-mcp)](https://www.npmjs.com/package/unsliced-pdf-mcp)
 [![Glama score](https://glama.ai/mcp/servers/harrythex42/Unsliced/badges/score.svg)](https://glama.ai/mcp/servers/harrythex42/Unsliced)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)

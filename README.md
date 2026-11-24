@@ -2,6 +2,8 @@
 
 **Turn Markdown or HTML into searchable PDFs that never slice tables or diagrams in half.**
 
+**Don't want to install MCP? [Use Unsliced in your browser](https://harrythex42.github.io/Unsliced/).** Chrome or Edge recommended.
+
 [![npm](https://img.shields.io/npm/v/unsliced-pdf-mcp)](https://www.npmjs.com/package/unsliced-pdf-mcp)
 [![Glama score](https://glama.ai/mcp/servers/harrythex42/Unsliced/badges/score.svg)](https://glama.ai/mcp/servers/harrythex42/Unsliced)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
